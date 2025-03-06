@@ -1,0 +1,18 @@
+#pragma once
+
+// clang-format off
+/// Major version - Incompatible API changes
+#define ATB_CPP_VERSION_MAJOR @PROJECT_VERSION_MAJOR@
+
+/// Minor version - New functionnality (backward compatible)
+#define ATB_CPP_VERSION_MINOR @PROJECT_VERSION_MINOR@
+
+/// Patch version - Bug fixes (backward compatible)
+#define ATB_CPP_VERSION_PATCH @PROJECT_VERSION_PATCH@
+
+/// Complete version number as string literal ("MAJOR.MINOR.PATCH")
+#define ATB_CPP_VERSION_STR "@PROJECT_VERSION@"
+
+// Project description
+#define ATB_CPP_DESCRIPTION "@PROJECT_DESCRIPTION@"
+// clang-format on
