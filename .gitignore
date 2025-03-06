@@ -30,3 +30,12 @@
 *.exe
 *.out
 *.app
+
+# CMake
+build/*
+
+# LSP
+.cache/*
+
+# Generic ignored dir
+ignored/*
