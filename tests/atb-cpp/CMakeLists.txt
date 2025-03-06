@@ -1,5 +1,6 @@
 add_executable(tests-${PROJECT_NAME}
   test_integer_sequence.cpp
+  test_tuple.cpp
 )
 
 target_link_libraries(tests-${PROJECT_NAME}
