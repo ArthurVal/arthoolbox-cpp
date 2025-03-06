@@ -1,6 +1,8 @@
 #pragma once
 
 // clang-format off
+
+/* VERSION *******************************************************************/
 /// Major version - Incompatible API changes
 #define ATB_CPP_VERSION_MAJOR @PROJECT_VERSION_MAJOR@
 
@@ -13,6 +15,10 @@
 /// Complete version number as string literal ("MAJOR.MINOR.PATCH")
 #define ATB_CPP_VERSION_STR "@PROJECT_VERSION@"
 
+/* DESCRIPTION ***************************************************************/
 // Project description
 #define ATB_CPP_DESCRIPTION "@PROJECT_DESCRIPTION@"
+
+/* BUILD_TYPE ****************************************************************/
+#define ATB_CPP_BUILD_TYPE "@CMAKE_BUILD_TYPE@"
 // clang-format on

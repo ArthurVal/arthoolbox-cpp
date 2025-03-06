@@ -8,10 +8,10 @@ project(atb-cpp
   DESCRIPTION "Usefull generic utils C++ functions/types/structs/..."
 )
 
-# Construct version.h using CMake variables
+# Construct config.h using CMake variables
 configure_file(
-  include/${PROJECT_NAME}/version.h.in
-  include/${PROJECT_NAME}/version.h
+  include/${PROJECT_NAME}/config.h.in
+  include/${PROJECT_NAME}/config.h
   @ONLY
 )
 
@@ -64,7 +64,7 @@ if(NOT DEFINED CMAKE_BUILD_TYPE OR NOT CMAKE_BUILD_TYPE)
 
   set(CMAKE_BUILD_TYPE Release
     CACHE STRING
-    "One of None, Debug, Release, RelWithDebInfo or MinSizeRel."
+    "One of Debug, Release, RelWithDebInfo or MinSizeRel."
     FORCE
   )
 endif()
