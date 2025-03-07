@@ -1,20 +1,63 @@
 #pragma once
 
 #include <cmath>
+#include <functional>
 #include <tuple>
 #include <utility>
 
+#include "internal/matcher-traits.hpp"
+
 namespace atb::matchers {
 
-namespace details {
-
+/// Generic Matcher Traits containing meta informations of a Matcher, for a
+/// given set of arguments
 template <class T, class... Args>
-struct IsMatcher : std::is_invocable_r<bool, T, Args...> {};
+struct MatcherTraits {
+  /// True if T has '.IsMatching(Args...) -> bool' interface
+  static constexpr auto HasMethod() -> bool {
+    return internal::HasIsMatchingMethod_v<T, Args...>;
+  }
 
-template <class T, class... Args>
-constexpr bool IsMatcher_v = IsMatcher<T, Args...>::value;
+  /// True if T is invokable  with '(Args...) -> bool' interface
+  static constexpr auto HasCallOperator() -> bool {
+    return internal::HasCallOperator_v<T, Args...>;
+  }
 
-}  // namespace details
+  /// True if either HasCallOperator() or HasMethod() return true
+  static constexpr auto IsValidMatcher() -> bool {
+    return HasMethod() or HasCallOperator();
+  }
+
+  /// static assert when T and Args... and not valid
+  static constexpr auto AssertWhenInvalid() -> void {
+    // NOTE: Provide a single and clear message location for assertion since
+    // Traits is responsible for defining what interfaces we are expecting
+    static_assert(
+        IsValidMatcher(),
+        "\nThe Matcher type T provided doesn't have the correct traits."
+        "\nIt must defined one of the following interface:"
+        "\n - 'T.IsMatching(Args...)  -> bool'"
+        "\n - 'T.operator()(Args...)  -> bool'");
+  }
+};
+
+/// Return the resulting of calling the matcher with the provided args
+/// Note: Act as call dispatcher, using traits to choose which function to call
+/// accordingly.
+/// The method will be prioritise over the call operator if both are defined.
+template <class Matcher, class... Args>
+constexpr auto IsMatching(Matcher&& m, Args&&... args) -> bool {
+  using Traits = MatcherTraits<Matcher, Args...>;
+  Traits::AssertWhenInvalid();
+
+  if constexpr (Traits::HasMethod()) {
+    return std::forward<Matcher>(m).IsMatching(std::forward<Args>(args)...);
+  } else if constexpr (Traits::HasCallOperator()) {
+    return std::invoke(std::forward<Matcher>(m), std::forward<Args>(args)...);
+  } else {
+    return false;
+  }
+}
 
 // COMMON MATCHERS //////////////////////////////////////////////////////////
 
@@ -75,7 +118,7 @@ constexpr auto Near(const T& expected,
 template <class Matcher>
 constexpr auto Not(Matcher&& m) noexcept {
   return [&](auto&& v) {
-    static_assert(details::IsMatcher_v<Matcher, decltype(v)>);
+    MatcherTraits<Matcher, decltype(v)>::AssertWhenInvalid();
     return not m(std::forward<decltype(v)>(v));
   };
 }
@@ -84,7 +127,7 @@ constexpr auto Not(Matcher&& m) noexcept {
 template <class... Matchers>
 constexpr auto All(Matchers&&... m) noexcept {
   return [&](auto&& v) {
-    static_assert((details::IsMatcher_v<Matchers, decltype(v)> and ...));
+    (MatcherTraits<Matchers, decltype(v)>::AssertWhenInvalid(), ...);
     return (m(v) and ...);
   };
 }
@@ -93,7 +136,7 @@ constexpr auto All(Matchers&&... m) noexcept {
 template <class... Matchers>
 constexpr auto Any(Matchers&&... m) noexcept {
   return [&](auto&& v) {
-    static_assert((details::IsMatcher_v<Matchers, decltype(v)> and ...));
+    (MatcherTraits<Matchers, decltype(v)>::AssertWhenInvalid(), ...);
     return (m(v) or ...);
   };
 }
@@ -113,13 +156,19 @@ constexpr auto OnArg(Matcher&& m) noexcept {
 /// Returns true if m returns true for ALL the input arguments
 template <class Matcher>
 constexpr auto AllArgs(Matcher&& m) noexcept {
-  return [&](auto&&... v) { return (m(std::forward<decltype(v)>(v)) and ...); };
+  return [&](auto&&... v) {
+    (MatcherTraits<Matcher, decltype(v)>::AssertWhenInvalid(), ...);
+    return (m(std::forward<decltype(v)>(v)) and ...);
+  };
 }
 
 /// Returns true if m returns true for at least ONE argument
 template <class Matcher>
 constexpr auto AnyArgs(Matcher&& m) noexcept {
-  return [&](auto&&... v) { return (m(std::forward<decltype(v)>(v)) or ...); };
+  return [&](auto&&... v) {
+    (MatcherTraits<Matcher, decltype(v)>::AssertWhenInvalid(), ...);
+    return (m(std::forward<decltype(v)>(v)) or ...);
+  };
 }
 
 }  // namespace atb::matchers

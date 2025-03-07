@@ -18,11 +18,11 @@ TEST(TestMatchers, Always) {
   // We can't unfold parameter packs with EXPECT_ macro, hence we encapsulate
   // inside functions
   constexpr auto ExpectTrue = [](auto&& v) {
-    EXPECT_TRUE(Always<true>()(std::forward<decltype(v)>(v)));
+    EXPECT_TRUE(IsMatching(Always<true>(), std::forward<decltype(v)>(v)));
   };
 
   constexpr auto ExpectFalse = [](auto&& v) {
-    EXPECT_FALSE(Always<false>()(std::forward<decltype(v)>(v)));
+    EXPECT_FALSE(IsMatching(Always<false>(), std::forward<decltype(v)>(v)));
   };
 
   std::apply(
@@ -35,62 +35,60 @@ TEST(TestMatchers, Always) {
 
 TEST(TestMatchers, Eq) {
   ::testing::StrictMock<tests::EqMock<bool, int>> mock;
-  auto matcher_with_mock = atb::matchers::Eq(mock);
 
   using testing::Return;
   EXPECT_CALL(mock, Eq(3, ArgSide::Right))
       .Times(1)
       .WillOnce(Return(true))
       .RetiresOnSaturation();
-  EXPECT_TRUE(Eq(3)(mock));
+  EXPECT_TRUE(IsMatching(Eq(3), mock));
 
   EXPECT_CALL(mock, Eq(4, ArgSide::Right))
       .Times(1)
       .WillOnce(Return(false))
       .RetiresOnSaturation();
-  EXPECT_FALSE(Eq(4)(mock));
+  EXPECT_FALSE(IsMatching(Eq(4), mock));
 
   EXPECT_CALL(mock, Eq(5, ArgSide::Left))
       .Times(1)
       .WillOnce(Return(true))
       .RetiresOnSaturation();
-  EXPECT_TRUE(matcher_with_mock(5));
+  EXPECT_TRUE(IsMatching(atb::matchers::Eq(mock), 5));
 
   EXPECT_CALL(mock, Eq(6, ArgSide::Left))
       .Times(1)
       .WillOnce(Return(false))
       .RetiresOnSaturation();
-  EXPECT_FALSE(matcher_with_mock(6));
+  EXPECT_FALSE(IsMatching(atb::matchers::Eq(mock), 6));
 }
 
 TEST(TestMatchers, Ne) {
   ::testing::StrictMock<tests::NeMock<bool, int>> mock;
-  auto matcher_with_mock = atb::matchers::Ne(mock);
 
   using testing::Return;
   EXPECT_CALL(mock, Ne(3, ArgSide::Right))
       .Times(1)
       .WillOnce(Return(true))
       .RetiresOnSaturation();
-  EXPECT_TRUE(Ne(3)(mock));
+  EXPECT_TRUE(IsMatching(Ne(3), mock));
 
   EXPECT_CALL(mock, Ne(4, ArgSide::Right))
       .Times(1)
       .WillOnce(Return(false))
       .RetiresOnSaturation();
-  EXPECT_FALSE(Ne(4)(mock));
+  EXPECT_FALSE(IsMatching(Ne(4), mock));
 
   EXPECT_CALL(mock, Ne(5, ArgSide::Left))
       .Times(1)
       .WillOnce(Return(true))
       .RetiresOnSaturation();
-  EXPECT_TRUE(matcher_with_mock(5));
+  EXPECT_TRUE(IsMatching(atb::matchers::Ne(mock), 5));
 
   EXPECT_CALL(mock, Ne(6, ArgSide::Left))
       .Times(1)
       .WillOnce(Return(false))
       .RetiresOnSaturation();
-  EXPECT_FALSE(matcher_with_mock(6));
+  EXPECT_FALSE(IsMatching(atb::matchers::Ne(mock), 6));
 }
 
 TEST(TestMatchers, Ge) {
@@ -121,16 +119,16 @@ TEST(TestMatchers, Gt) {
       .WillOnce(Return(true))
       .WillOnce(Return(false))
       .RetiresOnSaturation();
-  EXPECT_TRUE(Gt(3)(mock));
-  EXPECT_FALSE(Gt(3)(mock));
+  EXPECT_TRUE(IsMatching(Gt(3), mock));
+  EXPECT_FALSE(IsMatching(Gt(3), mock));
 
   EXPECT_CALL(mock, Gt(4, ArgSide::Left))
       .Times(2)
       .WillOnce(Return(true))
       .WillOnce(Return(false))
       .RetiresOnSaturation();
-  EXPECT_TRUE(atb::matchers::Gt(mock)(4));
-  EXPECT_FALSE(atb::matchers::Gt(mock)(4));
+  EXPECT_TRUE(IsMatching(atb::matchers::Gt(mock), 4));
+  EXPECT_FALSE(IsMatching(atb::matchers::Gt(mock), 4));
 }
 
 TEST(TestMatchers, Le) {
@@ -141,16 +139,16 @@ TEST(TestMatchers, Le) {
       .WillOnce(Return(true))
       .WillOnce(Return(false))
       .RetiresOnSaturation();
-  EXPECT_TRUE(Le(3)(mock));
-  EXPECT_FALSE(Le(3)(mock));
+  EXPECT_TRUE(IsMatching(Le(3), mock));
+  EXPECT_FALSE(IsMatching(Le(3), mock));
 
   EXPECT_CALL(mock, Le(4, ArgSide::Left))
       .Times(2)
       .WillOnce(Return(true))
       .WillOnce(Return(false))
       .RetiresOnSaturation();
-  EXPECT_TRUE(atb::matchers::Le(mock)(4));
-  EXPECT_FALSE(atb::matchers::Le(mock)(4));
+  EXPECT_TRUE(IsMatching(atb::matchers::Le(mock), 4));
+  EXPECT_FALSE(IsMatching(atb::matchers::Le(mock), 4));
 }
 
 TEST(TestMatchers, Lt) {
@@ -161,16 +159,16 @@ TEST(TestMatchers, Lt) {
       .WillOnce(Return(true))
       .WillOnce(Return(false))
       .RetiresOnSaturation();
-  EXPECT_TRUE(Lt(3)(mock));
-  EXPECT_FALSE(Lt(3)(mock));
+  EXPECT_TRUE(IsMatching(Lt(3), mock));
+  EXPECT_FALSE(IsMatching(Lt(3), mock));
 
   EXPECT_CALL(mock, Lt(4, ArgSide::Left))
       .Times(2)
       .WillOnce(Return(true))
       .WillOnce(Return(false))
       .RetiresOnSaturation();
-  EXPECT_TRUE(atb::matchers::Lt(mock)(4));
-  EXPECT_FALSE(atb::matchers::Lt(mock)(4));
+  EXPECT_TRUE(IsMatching(atb::matchers::Lt(mock), 4));
+  EXPECT_FALSE(IsMatching(atb::matchers::Lt(mock), 4));
 }
 
 TEST(TestMatchers, Near) {
@@ -191,8 +189,8 @@ TEST(TestMatchers, Not) {
       .WillOnce(Return(true))
       .WillOnce(Return(false))
       .RetiresOnSaturation();
-  EXPECT_FALSE(atb::matchers::Not(mock)(3));
-  EXPECT_TRUE(atb::matchers::Not(mock)(3));
+  EXPECT_FALSE(IsMatching(atb::matchers::Not(mock), 3));
+  EXPECT_TRUE(IsMatching(atb::matchers::Not(mock), 3));
 }
 
 TEST(TestMatchers, All) {
@@ -206,7 +204,7 @@ TEST(TestMatchers, All) {
       .WillOnce(Return(true))
       .WillOnce(Return(true))
       .RetiresOnSaturation();
-  EXPECT_TRUE(All(mock, mock, mock, mock)("Foo"sv));
+  EXPECT_TRUE(IsMatching(All(mock, mock, mock, mock), "Foo"sv));
 
   EXPECT_CALL(mock, Call("Bar"))
       .Times(3)
@@ -214,13 +212,13 @@ TEST(TestMatchers, All) {
       .WillOnce(Return(true))
       .WillOnce(Return(false))
       .RetiresOnSaturation();
-  EXPECT_FALSE(All(mock, mock, mock, mock)("Bar"sv));
+  EXPECT_FALSE(IsMatching(All(mock, mock, mock, mock), "Bar"sv));
 
   EXPECT_CALL(mock, Call("Baz"))
       .Times(1)
       .WillOnce(Return(false))
       .RetiresOnSaturation();
-  EXPECT_FALSE(All(mock, mock, mock, mock)("Baz"sv));
+  EXPECT_FALSE(IsMatching(All(mock, mock, mock, mock), "Baz"sv));
 }
 
 TEST(TestMatchers, Any) {
@@ -231,7 +229,7 @@ TEST(TestMatchers, Any) {
       .Times(1)
       .WillOnce(Return(true))
       .RetiresOnSaturation();
-  EXPECT_TRUE(Any(mock, mock, mock, mock)("Foo"sv));
+  EXPECT_TRUE(IsMatching(Any(mock, mock, mock, mock), "Foo"sv));
 
   EXPECT_CALL(mock, Call("Bar"))
       .Times(3)
@@ -239,7 +237,7 @@ TEST(TestMatchers, Any) {
       .WillOnce(Return(false))
       .WillOnce(Return(true))
       .RetiresOnSaturation();
-  EXPECT_TRUE(Any(mock, mock, mock, mock)("Bar"sv));
+  EXPECT_TRUE(IsMatching(Any(mock, mock, mock, mock), "Bar"sv));
 
   EXPECT_CALL(mock, Call("Baz"))
       .Times(4)
@@ -248,7 +246,7 @@ TEST(TestMatchers, Any) {
       .WillOnce(Return(false))
       .WillOnce(Return(false))
       .RetiresOnSaturation();
-  EXPECT_FALSE(Any(mock, mock, mock, mock)("Baz"sv));
+  EXPECT_FALSE(IsMatching(Any(mock, mock, mock, mock), "Baz"sv));
 }
 
 TEST(TestMatchers, OnArgs) {
@@ -262,9 +260,9 @@ TEST(TestMatchers, OnArgs) {
       .WillOnce(Return(true))
       .RetiresOnSaturation();
 
-  EXPECT_TRUE(OnArg<0>(mock)("Foo"sv, 1, 4, "Bar"sv));
-  EXPECT_FALSE(OnArg<3>(mock)(1, 4, "Bar"sv, "Foo"sv));
-  EXPECT_TRUE(OnArg<1>(mock)(1, "Foo"sv, 4, "Bar"sv));
+  EXPECT_TRUE(IsMatching(OnArg<0>(mock), "Foo"sv, 1, 4, "Bar"sv));
+  EXPECT_FALSE(IsMatching(OnArg<3>(mock), 1, 4, "Bar"sv, "Foo"sv));
+  EXPECT_TRUE(IsMatching(OnArg<1>(mock), 1, "Foo"sv, 4, "Bar"sv));
 }
 
 TEST(TestMatchers, AllArgs) {
@@ -283,7 +281,7 @@ TEST(TestMatchers, AllArgs) {
         .WillOnce(Return(true))
         .RetiresOnSaturation();
 
-    EXPECT_TRUE(AllArgs(mock)("Foo"sv, "Bar"sv));
+    EXPECT_TRUE(IsMatching(AllArgs(mock), "Foo"sv, "Bar"sv));
   }
 
   {
@@ -298,7 +296,7 @@ TEST(TestMatchers, AllArgs) {
         .WillOnce(Return(false))
         .RetiresOnSaturation();
 
-    EXPECT_FALSE(AllArgs(mock)("Foo"sv, "Bar"sv));
+    EXPECT_FALSE(IsMatching(AllArgs(mock), "Foo"sv, "Bar"sv));
   }
 
   {
@@ -308,7 +306,7 @@ TEST(TestMatchers, AllArgs) {
         .WillOnce(Return(false))
         .RetiresOnSaturation();
 
-    EXPECT_FALSE(AllArgs(mock)("Foo"sv, "Bar"sv));
+    EXPECT_FALSE(IsMatching(AllArgs(mock), "Foo"sv, "Bar"sv));
   }
 }
 
@@ -323,7 +321,7 @@ TEST(TestMatchers, AnyArgs) {
         .WillOnce(Return(true))
         .RetiresOnSaturation();
 
-    EXPECT_TRUE(AnyArgs(mock)("Foo"sv, "Bar"sv));
+    EXPECT_TRUE(IsMatching(AnyArgs(mock), "Foo"sv, "Bar"sv));
   }
 
   {
@@ -338,7 +336,7 @@ TEST(TestMatchers, AnyArgs) {
         .WillOnce(Return(true))
         .RetiresOnSaturation();
 
-    EXPECT_TRUE(AnyArgs(mock)("Foo"sv, "Bar"sv));
+    EXPECT_TRUE(IsMatching(AnyArgs(mock), "Foo"sv, "Bar"sv));
   }
 
   {
@@ -353,7 +351,7 @@ TEST(TestMatchers, AnyArgs) {
         .WillOnce(Return(false))
         .RetiresOnSaturation();
 
-    EXPECT_FALSE(AnyArgs(mock)("Foo"sv, "Bar"sv));
+    EXPECT_FALSE(IsMatching(AnyArgs(mock), "Foo"sv, "Bar"sv));
   }
 }
 
