@@ -30,7 +30,7 @@ struct MatcherTraits {
 
   /// True if either HasCallOperator() or HasMethod() return true
   static constexpr auto IsValidMatcher() -> bool {
-    return HasMethod() or HasFreeFunction() or HasCallOperator();
+    return HasMethod() || HasFreeFunction() || HasCallOperator();
   }
 
   /// static assert when T and Args... and not valid
@@ -132,7 +132,7 @@ template <class Matcher>
 constexpr auto Not(Matcher&& m) noexcept {
   return [&](auto&& v) {
     MatcherTraits<Matcher, decltype(v)>::AssertWhenInvalid();
-    return not m(std::forward<decltype(v)>(v));
+    return ! m(std::forward<decltype(v)>(v));
   };
 }
 
