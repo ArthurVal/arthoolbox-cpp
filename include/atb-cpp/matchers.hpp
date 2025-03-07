@@ -141,7 +141,7 @@ template <class... Matchers>
 constexpr auto All(Matchers&&... m) noexcept {
   return [&](auto&& v) {
     (MatcherTraits<Matchers, decltype(v)>::AssertWhenInvalid(), ...);
-    return (m(v) and ...);
+    return (m(v) && ...);
   };
 }
 
@@ -150,7 +150,7 @@ template <class... Matchers>
 constexpr auto Any(Matchers&&... m) noexcept {
   return [&](auto&& v) {
     (MatcherTraits<Matchers, decltype(v)>::AssertWhenInvalid(), ...);
-    return (m(v) or ...);
+    return (m(v) || ...);
   };
 }
 
@@ -171,7 +171,7 @@ template <class Matcher>
 constexpr auto AllArgs(Matcher&& m) noexcept {
   return [&](auto&&... v) {
     (MatcherTraits<Matcher, decltype(v)>::AssertWhenInvalid(), ...);
-    return (m(std::forward<decltype(v)>(v)) and ...);
+    return (m(std::forward<decltype(v)>(v)) && ...);
   };
 }
 
@@ -180,7 +180,7 @@ template <class Matcher>
 constexpr auto AnyArgs(Matcher&& m) noexcept {
   return [&](auto&&... v) {
     (MatcherTraits<Matcher, decltype(v)>::AssertWhenInvalid(), ...);
-    return (m(std::forward<decltype(v)>(v)) or ...);
+    return (m(std::forward<decltype(v)>(v)) || ...);
   };
 }
 
