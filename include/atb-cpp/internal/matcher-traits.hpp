@@ -30,6 +30,33 @@ struct HasIsMatchingMethod
 template <class T, class... Args>
 constexpr bool HasIsMatchingMethod_v = HasIsMatchingMethod<T, Args...>::value;
 
+namespace details {
+
+template <class T, class = void, class... Args>
+struct HasIsMatchingFreeFunctionImpl : std::false_type {};
+
+template <class T, class... Args>
+struct HasIsMatchingFreeFunctionImpl<
+    T,
+    std::void_t<decltype(IsMatching(std::declval<T>(),
+                                    std::declval<Args>()...))>,
+    Args...>
+    : std::is_convertible<decltype(IsMatching(std::declval<T>(),
+                                              std::declval<Args>()...)),
+                          bool> {};
+
+}  // namespace details
+
+/// Meta function returning TRUE when T has a method IsMatching with the
+/// following signature: 'T.IsMatching(Args...) -> bool'
+template <class T, class... Args>
+struct HasIsMatchingFreeFunction
+    : details::HasIsMatchingFreeFunctionImpl<T, void, Args...> {};
+
+template <class T, class... Args>
+constexpr bool HasIsMatchingFreeFunction_v =
+    HasIsMatchingFreeFunction<T, Args...>::value;
+
 /// Meta function returning TRUE when T is a callable (defined operator()) with
 /// the following signature: '(Args...) -> bool'
 template <class T, class... Args>

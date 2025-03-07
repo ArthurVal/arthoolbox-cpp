@@ -18,6 +18,11 @@ struct MatcherTraits {
     return internal::HasIsMatchingMethod_v<T, Args...>;
   }
 
+  /// True if the function 'IsMatching(T, Args...) -> bool' is defined
+  static constexpr auto HasFreeFunction() -> bool {
+    return internal::HasIsMatchingFreeFunction_v<T, Args...>;
+  }
+
   /// True if T is invokable  with '(Args...) -> bool' interface
   static constexpr auto HasCallOperator() -> bool {
     return internal::HasCallOperator_v<T, Args...>;
@@ -25,7 +30,7 @@ struct MatcherTraits {
 
   /// True if either HasCallOperator() or HasMethod() return true
   static constexpr auto IsValidMatcher() -> bool {
-    return HasMethod() or HasCallOperator();
+    return HasMethod() or HasFreeFunction() or HasCallOperator();
   }
 
   /// static assert when T and Args... and not valid
@@ -37,6 +42,7 @@ struct MatcherTraits {
         "\nThe Matcher type T provided doesn't have the correct traits."
         "\nIt must defined one of the following interface:"
         "\n - 'T.IsMatching(Args...)  -> bool'"
+        "\n - 'IsMatching(T, Args...)  -> bool'"
         "\n - 'T.operator()(Args...)  -> bool'");
   }
 };
@@ -44,14 +50,19 @@ struct MatcherTraits {
 /// Return the resulting of calling the matcher with the provided args
 /// Note: Act as call dispatcher, using traits to choose which function to call
 /// accordingly.
-/// The method will be prioritise over the call operator if both are defined.
+/// The priority is has follow:
+/// 1. Method
+/// 2. FreeFunction
+/// 3. Call operator
 template <class Matcher, class... Args>
-constexpr auto IsMatching(Matcher&& m, Args&&... args) -> bool {
+constexpr auto Invoke(Matcher&& m, Args&&... args) -> bool {
   using Traits = MatcherTraits<Matcher, Args...>;
   Traits::AssertWhenInvalid();
 
   if constexpr (Traits::HasMethod()) {
     return std::forward<Matcher>(m).IsMatching(std::forward<Args>(args)...);
+  } else if constexpr (Traits::HasFreeFunction()) {
+    return IsMatching(std::forward<Matcher>(m), std::forward<Args>(args)...);
   } else if constexpr (Traits::HasCallOperator()) {
     return std::invoke(std::forward<Matcher>(m), std::forward<Args>(args)...);
   } else {
