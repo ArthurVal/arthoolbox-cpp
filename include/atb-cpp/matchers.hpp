@@ -42,18 +42,20 @@ struct MatcherTraits {
         "\nThe Matcher type T provided doesn't have the correct traits."
         "\nIt must defined one of the following interface:"
         "\n - 'T.IsMatching(Args...)  -> bool'"
-        "\n - 'IsMatching(T, Args...)  -> bool'"
+        "\n - 'IsMatching(T, Args...)  -> bool' (using ADL)"
         "\n - 'T.operator()(Args...)  -> bool'");
   }
 };
 
-/// Return the resulting of calling the matcher with the provided args
-/// Note: Act as call dispatcher, using traits to choose which function to call
+/// Return the value of calling the matcher with the provided args.
+///
+/// Act as call dispatcher, using traits to choose which function to call
 /// accordingly.
-/// The priority is has follow:
+/// The priority is as follow:
 /// 1. Method
 /// 2. FreeFunction
 /// 3. Call operator
+/// 4. Asserts if none available
 template <class Matcher, class... Args>
 constexpr auto Invoke(Matcher&& m, Args&&... args) -> bool {
   using Traits = MatcherTraits<Matcher, Args...>;
