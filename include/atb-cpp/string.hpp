@@ -122,12 +122,10 @@ constexpr auto StrAppendTo(std::string& out,
  *  @note Optimize the 'resize()' operation by doing it once instead of doing
  *        it for each new '.append()' or 'operator+=()' call
  */
-template <class CharT>
-constexpr auto StrConcat(
-    std::initializer_list<std::basic_string_view<CharT>> strings)
-    -> std::optional<std::basic_string<CharT>> {
-  std::basic_string<CharT> out;
-  if (StrCopyInto(out, strings)) {
+inline auto StrConcat(std::initializer_list<std::string_view> strings)
+    -> std::optional<std::string> {
+  std::string out;
+  if (StrAppendTo(out, strings)) {
     return out;
   } else {
     return std::nullopt;
