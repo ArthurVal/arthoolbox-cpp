@@ -139,7 +139,7 @@ constexpr auto Not(Matcher&& m) noexcept {
 template <class... Matchers>
 constexpr auto All(Matchers&&... m) noexcept {
   return [&](auto&& v) {
-    return (Invoke(std::forward<Matcher>(m), v) && ...);
+    return (Invoke(std::forward<Matchers>(m), v) && ...);
   };
 }
 
@@ -147,7 +147,7 @@ constexpr auto All(Matchers&&... m) noexcept {
 template <class... Matchers>
 constexpr auto Any(Matchers&&... m) noexcept {
   return [&](auto&& v) {
-    return (Invoke(std::forward<Matcher>(m), v) || ...);
+    return (Invoke(std::forward<Matchers>(m), v) || ...);
   };
 }
 
