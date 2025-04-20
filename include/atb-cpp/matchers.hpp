@@ -131,8 +131,7 @@ constexpr auto Near(const T& expected,
 template <class Matcher>
 constexpr auto Not(Matcher&& m) noexcept {
   return [&](auto&& v) {
-    MatcherTraits<Matcher, decltype(v)>::AssertWhenInvalid();
-    return ! m(std::forward<decltype(v)>(v));
+    return !Invoke(std::forward<Matcher>(m), std::forward<decltype(v)>(v));
   };
 }
 
@@ -140,8 +139,7 @@ constexpr auto Not(Matcher&& m) noexcept {
 template <class... Matchers>
 constexpr auto All(Matchers&&... m) noexcept {
   return [&](auto&& v) {
-    (MatcherTraits<Matchers, decltype(v)>::AssertWhenInvalid(), ...);
-    return (m(v) && ...);
+    return (Invoke(std::forward<Matcher>(m), v) && ...);
   };
 }
 
@@ -149,8 +147,7 @@ constexpr auto All(Matchers&&... m) noexcept {
 template <class... Matchers>
 constexpr auto Any(Matchers&&... m) noexcept {
   return [&](auto&& v) {
-    (MatcherTraits<Matchers, decltype(v)>::AssertWhenInvalid(), ...);
-    return (m(v) || ...);
+    return (Invoke(std::forward<Matcher>(m), v) || ...);
   };
 }
 
@@ -162,7 +159,7 @@ constexpr auto OnArg(Matcher&& m) noexcept {
   return [&](auto&&... v) {
     static_assert(I < sizeof...(v), "Too few arguments");
     auto values = std::forward_as_tuple(std::forward<decltype(v)>(v)...);
-    return m(std::get<I>(values));
+    return Invoke(std::forward<Matcher>(m), std::get<I>(values));
   };
 }
 
@@ -170,8 +167,7 @@ constexpr auto OnArg(Matcher&& m) noexcept {
 template <class Matcher>
 constexpr auto AllArgs(Matcher&& m) noexcept {
   return [&](auto&&... v) {
-    (MatcherTraits<Matcher, decltype(v)>::AssertWhenInvalid(), ...);
-    return (m(std::forward<decltype(v)>(v)) && ...);
+    return (Invoke(std::forward<Matcher>(m), std::forward<decltype(v)>(v)) && ...);
   };
 }
 
@@ -179,8 +175,7 @@ constexpr auto AllArgs(Matcher&& m) noexcept {
 template <class Matcher>
 constexpr auto AnyArgs(Matcher&& m) noexcept {
   return [&](auto&&... v) {
-    (MatcherTraits<Matcher, decltype(v)>::AssertWhenInvalid(), ...);
-    return (m(std::forward<decltype(v)>(v)) || ...);
+    return (Invoke(std::forward<Matcher>(m), std::forward<decltype(v)>(v)) || ...);
   };
 }
 
