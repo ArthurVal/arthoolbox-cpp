@@ -29,7 +29,8 @@ constexpr auto StrSize(std::initializer_list<std::string_view> strings) noexcept
  *  @return One past the last byte written into
  */
 constexpr auto StrCopyInto(
-    char* d_first, std::initializer_list<std::string_view> strings) -> char* {
+    char* d_first,
+    std::initializer_list<std::string_view> strings) noexcept -> char* {
   for (auto str : strings) {
     d_first = std::copy_n(str.data(), str.size(), d_first);
   }
@@ -55,7 +56,7 @@ struct SpanChar {
  */
 constexpr auto StrCopyInto(SpanChar dest,
                            std::initializer_list<std::string_view> strings,
-                           bool crop = false) -> SpanChar {
+                           bool crop = false) noexcept -> SpanChar {
   for (auto str : strings) {
     if (dest.size >= str.size()) {
       dest.data = std::copy_n(str.data(), str.size(), dest.data);
@@ -84,11 +85,12 @@ constexpr auto StrCopyInto(SpanChar dest,
  *  @return The number of bytes added to str when successfull
  *
  *  @note Optimize the 'resize()' operation by doing it once instead of doing
- *        it for each new '.append()' or 'operator+=()' call
+ *        it for each new '.append()' or 'operator+=()' call at the cost of
+ *        iterating over the strings 2 times
  */
-constexpr auto StrAppendTo(
-    std::string& out,
-    std::initializer_list<std::string_view> strings) noexcept -> std::size_t {
+constexpr auto StrAppendTo(std::string& out,
+                           std::initializer_list<std::string_view> strings)
+    -> std::size_t {
   const std::uintmax_t old_size = out.size();
   const std::uintmax_t added = StrSize(strings);
   const std::uintmax_t new_size = old_size + added;
@@ -109,7 +111,8 @@ constexpr auto StrAppendTo(
  *       ((StrSize(strings) + out.size()) <= out.max_size()).
  *
  *  @note Optimize the 'resize()' operation by doing it once instead of doing
- *        it for each new '.append()' or 'operator+=()' call
+ *        it for each new '.append()' or 'operator+=()' call at the cost of
+ *        iterating over the strings 2 times
  */
 inline auto StrConcat(std::initializer_list<std::string_view> strings)
     -> std::string {
