@@ -2,7 +2,7 @@
 
 #include <type_traits>  // false_type
 
-namespace atb::details {
+namespace atb {
 
 /// Always evaluates to false
 template <typename...>
@@ -55,4 +55,4 @@ struct HasTrait : details::HasTraitImpl<void, Trait, Args...> {};
 template <template <class...> class Trait, class... Args>
 constexpr bool HasTrait_v = HasTrait<Trait, Args...>::value;
 
-}  // namespace atb::details
+}  // namespace atb

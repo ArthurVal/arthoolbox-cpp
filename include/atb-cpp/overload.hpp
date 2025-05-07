@@ -25,8 +25,7 @@ struct StrictOverload : Matchers... {
   /// is missing
   template <typename... T>
   constexpr auto operator()(T...) const {
-    static_assert(details::AlwaysFalse_v<T...>,
-                  "operator()(T...) is not implemented");
+    static_assert(AlwaysFalse_v<T...>, "operator()(T...) is not implemented");
   }
 };
 
