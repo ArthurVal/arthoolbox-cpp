@@ -1,8 +1,7 @@
 #pragma once
 
-#include <algorithm>   // std::copy_n
-#include <cstdint>     // std::uintmax_t
-#include <functional>  // std::invoke
+#include <algorithm>  // std::copy_n
+#include <cstdint>    // std::uintmax_t
 #include <initializer_list>
 #include <optional>
 #include <string>
@@ -21,67 +20,51 @@ constexpr auto StrSize(std::initializer_list<std::string_view> strings) noexcept
   return size;
 }
 
-/// Namespace providing some default copy's policies for StrCopyInto
-namespace cpy {
-
-/// Do not do any bound checks
-struct Unsafely {
-  constexpr auto operator()(std::string_view str,
-                            char* d_first) const noexcept -> char* {
-    return std::copy_n(str.data(), str.size(), d_first);
-  };
-};
-
 /**
- *  @return A CopyPolicy that limits the number of bytes written into
- *          d_first
+ *  @brief Unsafely Copy the range of \a strings into \a d_first
  *
- *  @param[in] size Maximum number of bytes written into d_first
- *  @param[in] crop_list_string When true, partially copy the last string that
- *                              would have overflow the destination range up to
- *                              the max size, otherwise stop before writing the
- *                              last string
- */
-constexpr auto FillUpTo(std::size_t size,
-                        bool crop_last_string = false) noexcept {
-  return
-      [remaining = size, crop_last_string](
-          std::string_view str, char* d_first) mutable -> std::optional<char*> {
-        std::optional<char*> res = std::nullopt;
-
-        if (remaining >= str.size()) {
-          res = std::copy_n(str.data(), str.size(), d_first);
-          remaining -= str.size();
-        } else if (crop_last_string && (remaining > 0)) {
-          res = std::copy_n(str.data(), remaining, d_first);
-          remaining = 0;
-        }
-
-        return res;
-      };
-}
-
-}  // namespace cpy
-
-/**
- *  @brief Copy the range of \a strings into \a d_first
- *
- *  @param[in] d_first Begin of the destination range
+ *  @param[in] d_first The destination char buffer
  *  @param[in] strings List of strings we wish to copy
- *  @param[in] do_copy Policy defining the way we copy the strings into
- *                     d_first (unsafely, stop at N bytes, etc...) (default to
- *                     cpy::Unsafely(), i.e. copy all strings)
  *
  *  @return One past the last byte written into
  */
-template <class CopyPolicyType = cpy::Unsafely>
 constexpr auto StrCopyInto(
-    char* d_first, std::initializer_list<std::string_view> strings,
-    CopyPolicyType&& do_copy = CopyPolicyType{}) -> char* {
+    char* d_first, std::initializer_list<std::string_view> strings) -> char* {
   for (auto str : strings) {
-    if (std::optional<char*> res = std::invoke(do_copy, str, d_first)) {
-      d_first = std::move(*res);
+    d_first = std::copy_n(str.data(), str.size(), d_first);
+  }
+
+  return d_first;
+}
+
+struct BoundedBuffer {
+  char* d_first;
+  std::size_t size;
+
+  bool crop_last_string = false;
+};
+
+/**
+ *  @brief Safely Copy the range of \a strings into \a dest
+ *
+ *  @param[in] dest A bound char buffer
+ *  @param[in] strings List of strings we wish to copy
+ *
+ *  @return One past the last byte written into
+ */
+constexpr auto StrCopyInto(BoundedBuffer dest,
+                           std::initializer_list<std::string_view> strings)
+    -> char* {
+  auto [d_first, remaining, crop] = dest;
+
+  for (auto str : strings) {
+    if (remaining >= str.size()) {
+      d_first = std::copy_n(str.data(), str.size(), d_first);
+      remaining -= str.size();
     } else {
+      if (crop && (remaining > 0)) {
+        d_first = std::copy_n(str.data(), remaining, d_first);
+      }
       break;
     }
   }
