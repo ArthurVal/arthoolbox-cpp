@@ -5,9 +5,21 @@
 #include <tuple>
 #include <utility>
 
-#include "internal/matcher-traits.hpp"
+#include "atb-cpp/type_traits.hpp"
 
 namespace atb::matchers {
+
+namespace details {
+
+template <class M, class... Args>
+using IsMatchingMethod =
+    decltype(std::declval<M>().IsMatching(std::declval<Args>()...));
+
+template <class M, class... Args>
+using IsMatchingFreeFunction =
+    decltype(IsMatching(std::declval<M>(), std::declval<Args>()...));
+
+}  // namespace details
 
 /// Generic Matcher Traits containing meta informations of a Matcher, for a
 /// given set of arguments
@@ -15,22 +27,22 @@ template <class T, class... Args>
 struct MatcherTraits {
   /// True if T has '.IsMatching(Args...) -> bool' interface
   static constexpr auto HasMethod() -> bool {
-    return internal::HasIsMatchingMethod_v<T, Args...>;
+    return HasTrait_v<details::IsMatchingMethod, T, Args...>;
   }
 
   /// True if the function 'IsMatching(T, Args...) -> bool' is defined
   static constexpr auto HasFreeFunction() -> bool {
-    return internal::HasIsMatchingFreeFunction_v<T, Args...>;
+    return HasTrait_v<details::IsMatchingFreeFunction, T, Args...>;
   }
 
   /// True if T is invokable  with '(Args...) -> bool' interface
-  static constexpr auto HasCallOperator() -> bool {
-    return internal::HasCallOperator_v<T, Args...>;
+  static constexpr auto IsInvokable() -> bool {
+    return std::is_invocable_r_v<bool, T, Args...>;
   }
 
   /// True if either HasCallOperator() or HasMethod() return true
   static constexpr auto IsValidMatcher() -> bool {
-    return HasMethod() || HasFreeFunction() || HasCallOperator();
+    return HasMethod() || HasFreeFunction() || IsInvokable();
   }
 
   /// static assert when T and Args... and not valid
@@ -43,7 +55,7 @@ struct MatcherTraits {
         "\nIt must defined one of the following interface:"
         "\n - 'T.IsMatching(Args...)  -> bool'"
         "\n - 'IsMatching(T, Args...)  -> bool' (using ADL)"
-        "\n - 'T.operator()(Args...)  -> bool'");
+        "\n - 'std::invoke(T, Args...)  -> bool'");
   }
 };
 
@@ -65,7 +77,7 @@ constexpr auto Invoke(Matcher&& m, Args&&... args) -> bool {
     return std::forward<Matcher>(m).IsMatching(std::forward<Args>(args)...);
   } else if constexpr (Traits::HasFreeFunction()) {
     return IsMatching(std::forward<Matcher>(m), std::forward<Args>(args)...);
-  } else if constexpr (Traits::HasCallOperator()) {
+  } else if constexpr (Traits::IsInvokable()) {
     return std::invoke(std::forward<Matcher>(m), std::forward<Args>(args)...);
   } else {
     return false;
@@ -138,17 +150,15 @@ constexpr auto Not(Matcher&& m) noexcept {
 /// Returns true if ALL matchers returns true
 template <class... Matchers>
 constexpr auto All(Matchers&&... m) noexcept {
-  return [&](auto&& v) {
-    return (Invoke(std::forward<Matchers>(m), v) && ...);
-  };
+  return
+      [&](auto&& v) { return (Invoke(std::forward<Matchers>(m), v) && ...); };
 }
 
 /// Returns true if ONE OF the matchers returns true
 template <class... Matchers>
 constexpr auto Any(Matchers&&... m) noexcept {
-  return [&](auto&& v) {
-    return (Invoke(std::forward<Matchers>(m), v) || ...);
-  };
+  return
+      [&](auto&& v) { return (Invoke(std::forward<Matchers>(m), v) || ...); };
 }
 
 // COMPOSITE ARGS MATCHERS //////////////////////////////////////////////////
@@ -167,7 +177,8 @@ constexpr auto OnArg(Matcher&& m) noexcept {
 template <class Matcher>
 constexpr auto AllArgs(Matcher&& m) noexcept {
   return [&](auto&&... v) {
-    return (Invoke(std::forward<Matcher>(m), std::forward<decltype(v)>(v)) && ...);
+    return (Invoke(std::forward<Matcher>(m), std::forward<decltype(v)>(v)) &&
+            ...);
   };
 }
 
@@ -175,7 +186,8 @@ constexpr auto AllArgs(Matcher&& m) noexcept {
 template <class Matcher>
 constexpr auto AnyArgs(Matcher&& m) noexcept {
   return [&](auto&&... v) {
-    return (Invoke(std::forward<Matcher>(m), std::forward<decltype(v)>(v)) || ...);
+    return (Invoke(std::forward<Matcher>(m), std::forward<decltype(v)>(v)) ||
+            ...);
   };
 }
 
