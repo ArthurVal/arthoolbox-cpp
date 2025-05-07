@@ -1,9 +1,9 @@
 #pragma once
 
 #include <algorithm>  // std::copy_n
-#include <cstdint>    // std::uintmax_t
+#include <cassert>
+#include <cstdint>  // std::uintmax_t
 #include <initializer_list>
-#include <optional>
 #include <string>
 #include <string_view>
 
@@ -78,17 +78,22 @@ constexpr auto StrCopyInto(SpanChar dest,
  *  @param[out] out Destination string we wish to append into
  *  @param[in] strings List of strings we wish to copy
  *
- *  @return The number of bytes added to str when successfull. Otherwise
- *          nullopt when the new computed size is bigger than `.max_size()`
+ *  @pre The number of bytes contained within strings fit into out
+ *       (StrSize(strings) <= out.max_size())
+ *
+ *  @return The number of bytes added to str when successfull
+ *
+ *  @note Optimize the 'resize()' operation by doing it once instead of doing
+ *        it for each new '.append()' or 'operator+=()' call
  */
-constexpr auto StrAppendTo(std::string& out,
-                           std::initializer_list<std::string_view>
-                               strings) noexcept -> std::optional<std::size_t> {
+constexpr auto StrAppendTo(
+    std::string& out,
+    std::initializer_list<std::string_view> strings) noexcept -> std::size_t {
   const std::uintmax_t old_size = out.size();
   const std::uintmax_t added = StrSize(strings);
   const std::uintmax_t new_size = old_size + added;
 
-  if (new_size > out.max_size()) return std::nullopt;
+  assert(new_size > out.max_size());
 
   // WARNING: bad_alloc
   out.resize(new_size);
@@ -98,21 +103,19 @@ constexpr auto StrAppendTo(std::string& out,
 }
 
 /**
- *  @return std::string Containing the concatenating of the range of
- *          strings when successfull. Otherwise nullopt when the new computed
- *          size is bigger than `.max_size()`
+ *  @return std::string Containing the concatenation of all strings
+ *
+ *  @pre The number of bytes contained within strings fit into out
+ *       ((StrSize(strings) + out.size()) <= out.max_size()).
  *
  *  @note Optimize the 'resize()' operation by doing it once instead of doing
  *        it for each new '.append()' or 'operator+=()' call
  */
 inline auto StrConcat(std::initializer_list<std::string_view> strings)
-    -> std::optional<std::string> {
+    -> std::string {
   std::string out;
-  if (StrAppendTo(out, strings)) {
-    return out;
-  } else {
-    return std::nullopt;
-  }
+  StrAppendTo(out, strings);
+  return out;
 }
 
 }  // namespace atb
