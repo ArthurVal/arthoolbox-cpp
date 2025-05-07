@@ -27,4 +27,32 @@ struct RemoveCVRef {
 template <class T>
 using RemoveCVRef_t = typename RemoveCVRef<T>::type;
 
+namespace details {
+
+template <class, template <class...> class Trait, class... Args>
+struct HasTraitImpl : std::false_type {};
+
+template <template <class...> class Trait, class... Args>
+struct HasTraitImpl<std::void_t<Trait<Args...>>, Trait, Args...>
+    : std::true_type {};
+
+}  // namespace details
+
+/// Returns TRUE when the given type ...T define the traits Traits
+/// Use like this:
+///
+/// // Create a trait...
+/// template <class ...T>
+/// using FooFunction = decltype(Foo(std::declval<T>()...));
+///
+/// // ...Then use HasTrait:
+/// static_assert(HasTrait_v<FooFunction, int, float, char>);
+/// // HasTrait_v<FooFunction, int, float, char> -> true when the function
+/// 'Foo(int, float, char)' is defined
+template <template <class...> class Trait, class... Args>
+struct HasTrait : details::HasTraitImpl<void, Trait, Args...> {};
+
+template <template <class...> class Trait, class... Args>
+constexpr bool HasTrait_v = HasTrait<Trait, Args...>::value;
+
 }  // namespace atb::details
