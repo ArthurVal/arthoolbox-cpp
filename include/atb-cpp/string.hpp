@@ -38,8 +38,8 @@ constexpr auto StrCopyInto(
   return d_first;
 }
 
-struct SpanChar {
-  char* data;
+struct FixedSizedBuffer {
+  char* begin;
   std::size_t size;
 };
 
@@ -54,16 +54,16 @@ struct SpanChar {
  *
  *  @return The remaining buffer after copy
  */
-constexpr auto StrCopyInto(SpanChar dest,
+constexpr auto StrCopyInto(FixedSizedBuffer dest,
                            std::initializer_list<std::string_view> strings,
-                           bool crop = false) noexcept -> SpanChar {
+                           bool crop = false) noexcept -> FixedSizedBuffer {
   for (auto str : strings) {
     if (dest.size >= str.size()) {
-      dest.data = std::copy_n(str.data(), str.size(), dest.data);
+      dest.begin = std::copy_n(str.data(), str.size(), dest.begin);
       dest.size -= str.size();
     } else {
       if (crop && (dest.size > 0)) {
-        dest.data = std::copy_n(str.data(), dest.size, dest.data);
+        dest.begin = std::copy_n(str.data(), dest.size, dest.begin);
         dest.size = 0;
       }
       break;
