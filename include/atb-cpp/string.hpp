@@ -45,16 +45,16 @@ struct Unsafely {
 constexpr auto FillUpTo(std::size_t size,
                         bool crop_last_string = false) noexcept {
   return
-      [size, crop_last_string](std::string_view str,
-                               char* d_first) mutable -> std::optional<char*> {
+      [remaining = size, crop_last_string](
+          std::string_view str, char* d_first) mutable -> std::optional<char*> {
         std::optional<char*> res = std::nullopt;
 
-        if (size >= str.size()) {
-          size -= str.size();
+        if (remaining >= str.size()) {
           res = std::copy_n(str.data(), str.size(), d_first);
-        } else if (crop_last_string && size > 0) {
-          res = std::copy_n(str.data(), size, d_first);
-          size = 0;
+          remaining -= str.size();
+        } else if (crop_last_string && (remaining > 0)) {
+          res = std::copy_n(str.data(), remaining, d_first);
+          remaining = 0;
         }
 
         return res;
