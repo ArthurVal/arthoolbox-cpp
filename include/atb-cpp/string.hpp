@@ -37,39 +37,39 @@ constexpr auto StrCopyInto(
   return d_first;
 }
 
-struct BoundedBuffer {
-  char* d_first;
+struct SpanChar {
+  char* data;
   std::size_t size;
-
-  bool crop_last_string = false;
 };
 
 /**
  *  @brief Safely Copy the range of \a strings into \a dest
  *
- *  @param[in] dest A bound char buffer
+ *  @param[in] dest A bounded destination char span
  *  @param[in] strings List of strings we wish to copy
+ *  @param[in] crop Set to true when, if the output dest would overflow, you
+ *                  still want to include an incomplete/cropped version of the
+ *                  last string that would have overflowed the buffer
  *
- *  @return One past the last byte written into
+ *  @return The remaining buffer after copy
  */
-constexpr auto StrCopyInto(BoundedBuffer dest,
-                           std::initializer_list<std::string_view> strings)
-    -> char* {
-  auto [d_first, remaining, crop] = dest;
-
+constexpr auto StrCopyInto(SpanChar dest,
+                           std::initializer_list<std::string_view> strings,
+                           bool crop = false) -> SpanChar {
   for (auto str : strings) {
-    if (remaining >= str.size()) {
-      d_first = std::copy_n(str.data(), str.size(), d_first);
-      remaining -= str.size();
+    if (dest.size >= str.size()) {
+      dest.data = std::copy_n(str.data(), str.size(), dest.data);
+      dest.size -= str.size();
     } else {
-      if (crop && (remaining > 0)) {
-        d_first = std::copy_n(str.data(), remaining, d_first);
+      if (crop && (dest.size > 0)) {
+        dest.data = std::copy_n(str.data(), dest.size, dest.data);
+        dest.size = 0;
       }
       break;
     }
   }
 
-  return d_first;
+  return dest;
 }
 
 /**
