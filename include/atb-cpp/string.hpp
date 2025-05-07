@@ -53,8 +53,8 @@ constexpr auto FillUpTo(std::size_t size,
           size -= str.size();
           res = std::copy_n(str.data(), str.size(), d_first);
         } else if (crop_last_string && size > 0) {
-          size = 0;
           res = std::copy_n(str.data(), size, d_first);
+          size = 0;
         }
 
         return res;
