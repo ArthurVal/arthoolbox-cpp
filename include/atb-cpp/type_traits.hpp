@@ -38,8 +38,9 @@ struct HasTraitImpl<std::void_t<Trait<Args...>>, Trait, Args...>
 
 }  // namespace details
 
-/// Returns TRUE when the given type ...T define the traits Traits
-/// Use like this:
+/// Returns TRUE when the given type Trait<Args...> is a valid type (SFINAE)
+///
+/// Use it like this:
 ///
 /// // Create a trait...
 /// template <class ...T>
@@ -47,8 +48,7 @@ struct HasTraitImpl<std::void_t<Trait<Args...>>, Trait, Args...>
 ///
 /// // ...Then use HasTrait:
 /// static_assert(HasTrait_v<FooFunction, int, float, char>);
-/// // HasTrait_v<FooFunction, int, float, char> -> true when the function
-/// 'Foo(int, float, char)' is defined
+/// // -> True if `Foo(int, float, char)` exists
 template <template <class...> class Trait, class... Args>
 struct HasTrait : details::HasTraitImpl<void, Trait, Args...> {};
 
