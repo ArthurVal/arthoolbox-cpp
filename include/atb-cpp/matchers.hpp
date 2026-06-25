@@ -23,21 +23,21 @@ using IsMatchingFreeFunction =
 
 /// Generic Matcher Traits containing meta informations of a Matcher, for a
 /// given set of arguments
-template <class T, class... Args>
+template <class M, class... Args>
 struct MatcherTraits {
   /// True if T has '.IsMatching(Args...) -> bool' interface
   static constexpr auto HasMethod() -> bool {
-    return HasTrait_v<details::IsMatchingMethod, T, Args...>;
+    return HasTrait_v<details::IsMatchingMethod, M, Args...>;
   }
 
   /// True if the function 'IsMatching(T, Args...) -> bool' is defined
   static constexpr auto HasFreeFunction() -> bool {
-    return HasTrait_v<details::IsMatchingFreeFunction, T, Args...>;
+    return HasTrait_v<details::IsMatchingFreeFunction, M, Args...>;
   }
 
   /// True if T is invokable  with '(Args...) -> bool' interface
   static constexpr auto IsInvokable() -> bool {
-    return std::is_invocable_r_v<bool, T, Args...>;
+    return std::is_invocable_r_v<bool, M, Args...>;
   }
 
   /// True if either HasCallOperator() or HasMethod() return true
