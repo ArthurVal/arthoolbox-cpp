@@ -170,7 +170,7 @@ constexpr auto Near(T expected, ErrorType abs_error = 1e-6) noexcept {
 template <class Matcher>
 constexpr auto Not(Matcher m) noexcept {
   return
-      [m = std::move(m)](const auto& v) -> bool { return !IsMatching(m, v); };
+      [m = std::move(m)](const auto& v) -> bool { return !::IsMatching(m, v); };
 }
 
 /// Returns true if ALL matchers returns true
@@ -179,7 +179,7 @@ constexpr auto AllOf(Matchers... m) noexcept {
   return
       [matchers = std::make_tuple(std::move(m)...)](const auto&... v) -> bool {
         return std::apply(
-            [&](const auto&... _m) { return (IsMatching(_m, v...) && ...); },
+            [&](const auto&... _m) { return (::IsMatching(_m, v...) && ...); },
             matchers);
       };
 }
@@ -190,7 +190,7 @@ constexpr auto AnyOf(Matchers... m) noexcept {
   return
       [matchers = std::make_tuple(std::move(m)...)](const auto&... v) -> bool {
         return std::apply(
-            [&](const auto&... _m) { return (IsMatching(_m, v...) || ...); },
+            [&](const auto&... _m) { return (::IsMatching(_m, v...) || ...); },
             matchers);
       };
 }
@@ -202,7 +202,7 @@ template <std::size_t... I, class Matcher>
 constexpr auto OnArgs(Matcher m) noexcept {
   return [m = std::move(m)](const auto&... v) -> bool {
     auto values = std::tie(v...);
-    return IsMatching(m, std::get<I>(values)...);
+    return ::IsMatching(m, std::get<I>(values)...);
   };
 }
 
@@ -210,7 +210,7 @@ constexpr auto OnArgs(Matcher m) noexcept {
 template <class Matcher>
 constexpr auto AllArgs(Matcher m) noexcept {
   return [m = std::move(m)](const auto&... v) -> bool {
-    return (IsMatching(m, v) && ...);
+    return (::IsMatching(m, v) && ...);
   };
 }
 
@@ -218,7 +218,7 @@ constexpr auto AllArgs(Matcher m) noexcept {
 template <class Matcher>
 constexpr auto AnyArgs(Matcher m) noexcept {
   return [m = std::move(m)](const auto&... v) -> bool {
-    return (IsMatching(m, v) || ...);
+    return (::IsMatching(m, v) || ...);
   };
 }
 
