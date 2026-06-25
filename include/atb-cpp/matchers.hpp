@@ -175,22 +175,24 @@ constexpr auto Not(Matcher m) noexcept {
 
 /// Returns true if ALL matchers returns true
 template <class... Matchers>
-constexpr auto AllOf(Matchers&&... m) noexcept {
-  return [&](auto&&... v) -> bool {
-    return (IsMatching(std::forward<Matchers>(m),
-                       std::forward<decltype(v)>(v)...) &&
-            ...);
-  };
+constexpr auto AllOf(Matchers... m) noexcept {
+  return
+      [matchers = std::make_tuple(std::move(m)...)](const auto&... v) -> bool {
+        return std::apply(
+            [&](const auto&... _m) { return (IsMatching(_m, v...) && ...); },
+            matchers);
+      };
 }
 
 /// Returns true if ONE OF the matchers returns true
 template <class... Matchers>
-constexpr auto AnyOf(Matchers&&... m) noexcept {
-  return [&](auto&&... v) -> bool {
-    return (IsMatching(std::forward<Matchers>(m),
-                       std::forward<decltype(v)>(v)...) ||
-            ...);
-  };
+constexpr auto AnyOf(Matchers... m) noexcept {
+  return
+      [matchers = std::make_tuple(std::move(m)...)](const auto&... v) -> bool {
+        return std::apply(
+            [&](const auto&... _m) { return (IsMatching(_m, v...) || ...); },
+            matchers);
+      };
 }
 
 // COMPOSITE ARGS MATCHERS //////////////////////////////////////////////////
