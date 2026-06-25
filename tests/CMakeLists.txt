@@ -8,6 +8,9 @@ set(${PROJECT_NAME}_TESTING_GTEST_URL
   )
 cmake_print_variables(${PROJECT_NAME}_TESTING_GTEST_URL)
 
+# Fix Windows libs nightmware...
+set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+
 find_package(GTest)
 if(NOT GTest_FOUND)
   message(STATUS "Trying to fetch it from URL \"${${PROJECT_NAME}_TESTING_GTEST_URL}\":...")
