@@ -59,30 +59,45 @@ struct MatcherTraits {
   }
 };
 
-/// Return the value of calling the matcher with the provided args.
+namespace details {
+
+/// Prevent fall backs for the CPO
+void IsMatching() = delete;
+
+/// IsMatching Customisation Point Object (CPO) dispatcher
+struct IsMatching_fn {
+  template <class M, class... Args>
+  constexpr auto operator()(M&& m, Args&&... args) const -> bool {
+    using Traits = MatcherTraits<std::remove_reference_t<M>,
+                                 std::remove_reference_t<Args>...>;
+
+    Traits::AssertWhenInvalid();
+
+    if constexpr (Traits::HasMethod()) {
+      return std::forward<M>(m).IsMatching(std::forward<Args>(args)...);
+    } else if constexpr (Traits::HasFreeFunction()) {
+      return IsMatching(std::forward<M>(m), std::forward<Args>(args)...);
+    } else if constexpr (Traits::IsInvokable()) {
+      return std::invoke(std::forward<M>(m), std::forward<Args>(args)...);
+    } else {
+      return false;  // Should never be reached due to AssertWhenInvalid
+    }
+  }
+};
+
+}  // namespace details
+
+/// Main function use to call ANY matcher
 ///
-/// Act as call dispatcher, using traits to choose which function to call
+/// This act as call dispatcher, using traits to choose which function to call
 /// accordingly.
+///
 /// The priority is as follow:
 /// 1. Method
 /// 2. FreeFunction
 /// 3. Call operator
 /// 4. Asserts if none available
-template <class Matcher, class... Args>
-constexpr auto Invoke(Matcher&& m, Args&&... args) -> bool {
-  using Traits = MatcherTraits<Matcher, Args...>;
-  Traits::AssertWhenInvalid();
-
-  if constexpr (Traits::HasMethod()) {
-    return std::forward<Matcher>(m).IsMatching(std::forward<Args>(args)...);
-  } else if constexpr (Traits::HasFreeFunction()) {
-    return IsMatching(std::forward<Matcher>(m), std::forward<Args>(args)...);
-  } else if constexpr (Traits::IsInvokable()) {
-    return std::invoke(std::forward<Matcher>(m), std::forward<Args>(args)...);
-  } else {
-    return false;
-  }
-}
+inline constexpr details::IsMatching_fn IsMatching{};
 
 // COMMON MATCHERS //////////////////////////////////////////////////////////
 
@@ -153,27 +168,27 @@ constexpr auto Near(const T& expected,
 template <class Matcher>
 constexpr auto Not(Matcher&& m) noexcept {
   return [&](auto&& v) -> bool {
-    return !Invoke(std::forward<Matcher>(m), std::forward<decltype(v)>(v));
+    return !IsMatching(std::forward<Matcher>(m), std::forward<decltype(v)>(v));
   };
 }
 
 /// Returns true if ALL matchers returns true
 template <class... Matchers>
-constexpr auto All(Matchers&&... m) noexcept {
+constexpr auto AllOf(Matchers&&... m) noexcept {
   return [&](auto&&... v) -> bool {
-    return (
-        Invoke(std::forward<Matchers>(m), std::forward<decltype(v)>(v)...) &&
-        ...);
+    return (IsMatching(std::forward<Matchers>(m),
+                       std::forward<decltype(v)>(v)...) &&
+            ...);
   };
 }
 
 /// Returns true if ONE OF the matchers returns true
 template <class... Matchers>
-constexpr auto Any(Matchers&&... m) noexcept {
+constexpr auto AnyOf(Matchers&&... m) noexcept {
   return [&](auto&&... v) -> bool {
-    return (
-        Invoke(std::forward<Matchers>(m), std::forward<decltype(v)>(v)...) ||
-        ...);
+    return (IsMatching(std::forward<Matchers>(m),
+                       std::forward<decltype(v)>(v)...) ||
+            ...);
   };
 }
 
@@ -185,7 +200,7 @@ constexpr auto OnArg(Matcher&& m) noexcept {
   return [&](auto&&... v) -> bool {
     static_assert(I < sizeof...(v), "Too few arguments");
     auto values = std::forward_as_tuple(std::forward<decltype(v)>(v)...);
-    return Invoke(std::forward<Matcher>(m), std::get<I>(values));
+    return IsMatching(std::forward<Matcher>(m), std::get<I>(values));
   };
 }
 
@@ -193,8 +208,9 @@ constexpr auto OnArg(Matcher&& m) noexcept {
 template <class Matcher>
 constexpr auto AllArgs(Matcher&& m) noexcept {
   return [&](auto&&... v) -> bool {
-    return (Invoke(std::forward<Matcher>(m), std::forward<decltype(v)>(v)) &&
-            ...);
+    return (
+        IsMatching(std::forward<Matcher>(m), std::forward<decltype(v)>(v)) &&
+        ...);
   };
 }
 
@@ -202,8 +218,9 @@ constexpr auto AllArgs(Matcher&& m) noexcept {
 template <class Matcher>
 constexpr auto AnyArgs(Matcher&& m) noexcept {
   return [&](auto&&... v) -> bool {
-    return (Invoke(std::forward<Matcher>(m), std::forward<decltype(v)>(v)) ||
-            ...);
+    return (
+        IsMatching(std::forward<Matcher>(m), std::forward<decltype(v)>(v)) ||
+        ...);
   };
 }
 
