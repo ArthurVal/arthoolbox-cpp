@@ -15,16 +15,14 @@ namespace atb {
 
 namespace {
 
-template <class R, class... Args>
-struct MatcherFreeFunctionMock : public CallableMock<R, const Args&...> {
-  using Base = CallableMock<R, const Args&...>;
+template <class... Args>
+struct MatcherFreeFunctionMock : public CallableMock<bool, const Args&...> {
+  using Base = CallableMock<bool, const Args&...>;
+  using typename Base::arg_t;
 
-  using arg_t = typename Base::arg_t;
-  using return_t = typename Base::return_t;
-
-  MOCK_METHOD(return_t, FreeFunctionCall, (arg_t), (const));
+  MOCK_METHOD(bool, FreeFunctionCall, (arg_t), (const));
   friend constexpr auto IsMatching(const MatcherFreeFunctionMock& mock,
-                                   const Args&... args) -> return_t {
+                                   const Args&... args) -> bool {
     if constexpr (sizeof...(Args) == 0) {
       return mock.FreeFunctionCall();
     } else if constexpr (sizeof...(Args) == 1) {
@@ -35,15 +33,14 @@ struct MatcherFreeFunctionMock : public CallableMock<R, const Args&...> {
   }
 };
 
-template <class R, class... Args>
-struct MatcherMethodMock : public MatcherFreeFunctionMock<R, Args...> {
-  using Base = MatcherFreeFunctionMock<R, Args...>;
+template <class... Args>
+struct MatcherMethodMock : public MatcherFreeFunctionMock<Args...> {
+  using Base = MatcherFreeFunctionMock<Args...>;
+  using typename Base::arg_t;
 
-  using arg_t = typename Base::arg_t;
-  using return_t = typename Base::return_t;
+  MOCK_METHOD(bool, MethodCall, (arg_t), (const));
 
-  MOCK_METHOD(return_t, MethodCall, (arg_t), (const));
-  constexpr auto IsMatching(const Args&... args) const -> return_t {
+  constexpr auto IsMatching(const Args&... args) const -> bool {
     if constexpr (sizeof...(Args) == 0) {
       return MethodCall();
     } else if constexpr (sizeof...(Args) == 1) {
@@ -61,21 +58,20 @@ TEST(TestMatchers, IsMatching) {
   EXPECT_CALL(only_call, Call(3)).Times(1).WillOnce(Return(true));
   EXPECT_TRUE(IsMatching(only_call, 3));
 
-  ::testing::StrictMock<MatcherFreeFunctionMock<bool, int>>
-      call_and_free_function;
+  ::testing::StrictMock<MatcherFreeFunctionMock<int>> call_and_free_function;
   EXPECT_CALL(call_and_free_function, FreeFunctionCall(4))
       .Times(1)
       .WillOnce(Return(false));
   EXPECT_FALSE(IsMatching(call_and_free_function, 4));
 
-  ::testing::StrictMock<MatcherMethodMock<bool, int>>
+  ::testing::StrictMock<MatcherMethodMock<int>>
       call_and_free_function_and_method;
   EXPECT_CALL(call_and_free_function_and_method, MethodCall(5))
       .Times(2)
       .WillOnce(Return(true))
       .WillOnce(Return(false));
   EXPECT_TRUE(IsMatching(call_and_free_function_and_method, 5));
-  EXPECT_FALSE(IsMatching(&MatcherMethodMock<bool, int>::IsMatching,
+  EXPECT_FALSE(IsMatching(&MatcherMethodMock<int>::IsMatching,
                           call_and_free_function_and_method, 5));
 }
 
