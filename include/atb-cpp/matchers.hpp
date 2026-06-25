@@ -226,7 +226,7 @@ constexpr auto AnyArgs(Matcher m) noexcept {
 
 /// Type erased matcher, able store ANY matcher at runtime, polymorphically
 template <class... Args>
-class AnyMatcher {
+class AnyMatcher final {
   /// The virtual interface defining a Matcher
   struct Interface;
 
