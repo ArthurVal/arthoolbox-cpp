@@ -104,61 +104,63 @@ inline constexpr details::IsMatching_fn IsMatching{};
 /// Returns Value
 template <bool Value>
 constexpr auto Always() noexcept {
-  return [](auto...) noexcept -> bool { return Value; };
+  return [](const auto&...) noexcept -> bool { return Value; };
 }
 
 /// Returns true when v == expected
 template <class T>
-constexpr auto Eq(const T& expected) noexcept {
-  return [&](auto&& v) -> bool {
-    return std::forward<decltype(v)>(v) == expected;
+constexpr auto Eq(T expected) noexcept {
+  return [expected = std::move(expected)](const auto& v) -> bool {
+    return v == expected;
   };
 }
 
 /// Returns true when v != expected
 template <class T>
-constexpr auto Ne(const T& expected) noexcept {
-  return [&](auto&& v) -> bool {
-    return std::forward<decltype(v)>(v) != expected;
+constexpr auto Ne(T expected) noexcept {
+  return [expected = std::move(expected)](const auto& v) -> bool {
+    return v != expected;
   };
 }
 
 /// Returns true when v >= expected
 template <class T>
-constexpr auto Ge(const T& expected) noexcept {
-  return [&](auto&& v) -> bool {
-    return std::forward<decltype(v)>(v) >= expected;
+constexpr auto Ge(T expected) noexcept {
+  return [expected = std::move(expected)](const auto& v) -> bool {
+    return v >= expected;
   };
 }
 
 /// Returns true when v > expected
 template <class T>
-constexpr auto Gt(const T& expected) noexcept {
-  return
-      [&](auto&& v) -> bool { return std::forward<decltype(v)>(v) > expected; };
+constexpr auto Gt(T expected) noexcept {
+  return [expected = std::move(expected)](const auto& v) -> bool {
+    return v > expected;
+  };
 }
 
 /// Returns true when v <= expected
 template <class T>
-constexpr auto Le(const T& expected) noexcept {
-  return [&](auto&& v) -> bool {
-    return std::forward<decltype(v)>(v) <= expected;
+constexpr auto Le(T expected) noexcept {
+  return [expected = std::move(expected)](const auto& v) -> bool {
+    return v <= expected;
   };
 }
 
 /// Returns true when v < expected
 template <class T>
-constexpr auto Lt(const T& expected) noexcept {
-  return
-      [&](auto&& v) -> bool { return std::forward<decltype(v)>(v) < expected; };
+constexpr auto Lt(T expected) noexcept {
+  return [expected = std::move(expected)](const auto& v) -> bool {
+    return v < expected;
+  };
 }
 
 // Returns true when |v - expected| <= abs_error
 template <class T, class ErrorType = double>
-constexpr auto Near(const T& expected,
-                    const ErrorType& abs_error = 1e-6) noexcept {
-  return [&](auto&& v) -> bool {
-    return (std::abs(std::forward<decltype(v)>(v) - expected) <= abs_error);
+constexpr auto Near(T expected, ErrorType abs_error = 1e-6) noexcept {
+  return [expected = std::move(expected),
+          abs_error = std::move(abs_error)](const auto& v) -> bool {
+    return (std::abs(v - expected) <= abs_error);
   };
 }
 
