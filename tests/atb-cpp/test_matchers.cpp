@@ -286,7 +286,7 @@ TEST(TestMatchers, All) {
 
   {
     ::testing::StrictMock<CallableMock<bool, std::string_view, int>> mock;
-    using arg_t = typename decltype(std::ref(mock))::arg_t;
+    using arg_t = typename decltype(mock)::arg_t;
     using testing::Return;
 
     EXPECT_CALL(mock, Call(arg_t{"Foo"sv, 42}))
@@ -330,7 +330,7 @@ TEST(TestMatchers, Any) {
 
   {
     ::testing::StrictMock<CallableMock<bool, std::string_view, int>> mock;
-    using arg_t = typename decltype(std::ref(mock))::arg_t;
+    using arg_t = typename decltype(mock)::arg_t;
     using testing::Return;
 
     EXPECT_CALL(mock, Call(arg_t{"Foo"sv, 42}))
