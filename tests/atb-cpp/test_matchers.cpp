@@ -11,7 +11,7 @@ using tests::ComparableMock;
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
-namespace atb::matchers {
+namespace atb {
 namespace {
 
 template <class R, class... Args>
@@ -97,6 +97,7 @@ TEST(TestMatchers, Eq) {
   ::testing::StrictMock<tests::EqMock<bool, int>> mock;
 
   using testing::Return;
+
   EXPECT_CALL(mock, Eq(3, ArgSide::Right))
       .Times(1)
       .WillOnce(Return(true))
@@ -113,13 +114,13 @@ TEST(TestMatchers, Eq) {
       .Times(1)
       .WillOnce(Return(true))
       .RetiresOnSaturation();
-  EXPECT_TRUE(Invoke(atb::matchers::Eq(mock), 5));
+  EXPECT_TRUE(Invoke(atb::Eq(mock), 5));
 
   EXPECT_CALL(mock, Eq(6, ArgSide::Left))
       .Times(1)
       .WillOnce(Return(false))
       .RetiresOnSaturation();
-  EXPECT_FALSE(Invoke(atb::matchers::Eq(mock), 6));
+  EXPECT_FALSE(Invoke(atb::Eq(mock), 6));
 }
 
 TEST(TestMatchers, Ne) {
@@ -142,13 +143,13 @@ TEST(TestMatchers, Ne) {
       .Times(1)
       .WillOnce(Return(true))
       .RetiresOnSaturation();
-  EXPECT_TRUE(Invoke(atb::matchers::Ne(mock), 5));
+  EXPECT_TRUE(Invoke(atb::Ne(mock), 5));
 
   EXPECT_CALL(mock, Ne(6, ArgSide::Left))
       .Times(1)
       .WillOnce(Return(false))
       .RetiresOnSaturation();
-  EXPECT_FALSE(Invoke(atb::matchers::Ne(mock), 6));
+  EXPECT_FALSE(Invoke(atb::Ne(mock), 6));
 }
 
 TEST(TestMatchers, Ge) {
@@ -167,8 +168,8 @@ TEST(TestMatchers, Ge) {
       .WillOnce(Return(true))
       .WillOnce(Return(false))
       .RetiresOnSaturation();
-  EXPECT_TRUE(atb::matchers::Ge(mock)(4));
-  EXPECT_FALSE(atb::matchers::Ge(mock)(4));
+  EXPECT_TRUE(atb::Ge(mock)(4));
+  EXPECT_FALSE(atb::Ge(mock)(4));
 }
 
 TEST(TestMatchers, Gt) {
@@ -187,8 +188,8 @@ TEST(TestMatchers, Gt) {
       .WillOnce(Return(true))
       .WillOnce(Return(false))
       .RetiresOnSaturation();
-  EXPECT_TRUE(Invoke(atb::matchers::Gt(mock), 4));
-  EXPECT_FALSE(Invoke(atb::matchers::Gt(mock), 4));
+  EXPECT_TRUE(Invoke(atb::Gt(mock), 4));
+  EXPECT_FALSE(Invoke(atb::Gt(mock), 4));
 }
 
 TEST(TestMatchers, Le) {
@@ -207,8 +208,8 @@ TEST(TestMatchers, Le) {
       .WillOnce(Return(true))
       .WillOnce(Return(false))
       .RetiresOnSaturation();
-  EXPECT_TRUE(Invoke(atb::matchers::Le(mock), 4));
-  EXPECT_FALSE(Invoke(atb::matchers::Le(mock), 4));
+  EXPECT_TRUE(Invoke(atb::Le(mock), 4));
+  EXPECT_FALSE(Invoke(atb::Le(mock), 4));
 }
 
 TEST(TestMatchers, Lt) {
@@ -227,8 +228,8 @@ TEST(TestMatchers, Lt) {
       .WillOnce(Return(true))
       .WillOnce(Return(false))
       .RetiresOnSaturation();
-  EXPECT_TRUE(Invoke(atb::matchers::Lt(mock), 4));
-  EXPECT_FALSE(Invoke(atb::matchers::Lt(mock), 4));
+  EXPECT_TRUE(Invoke(atb::Lt(mock), 4));
+  EXPECT_FALSE(Invoke(atb::Lt(mock), 4));
 }
 
 TEST(TestMatchers, Near) {
@@ -249,64 +250,96 @@ TEST(TestMatchers, Not) {
       .WillOnce(Return(true))
       .WillOnce(Return(false))
       .RetiresOnSaturation();
-  EXPECT_FALSE(Invoke(atb::matchers::Not(mock), 3));
-  EXPECT_TRUE(Invoke(atb::matchers::Not(mock), 3));
+  EXPECT_FALSE(Invoke(atb::Not(mock), 3));
+  EXPECT_TRUE(Invoke(atb::Not(mock), 3));
 }
 
 TEST(TestMatchers, All) {
-  ::testing::StrictMock<CallableMock<bool, std::string_view>> mock;
-  using testing::Return;
+  {
+    ::testing::StrictMock<CallableMock<bool, std::string_view>> mock;
+    using testing::Return;
 
-  EXPECT_CALL(mock, Call("Foo"))
-      .Times(4)
-      .WillOnce(Return(true))
-      .WillOnce(Return(true))
-      .WillOnce(Return(true))
-      .WillOnce(Return(true))
-      .RetiresOnSaturation();
-  EXPECT_TRUE(Invoke(All(mock, mock, mock, mock), "Foo"sv));
+    EXPECT_CALL(mock, Call("Foo"))
+        .Times(4)
+        .WillOnce(Return(true))
+        .WillOnce(Return(true))
+        .WillOnce(Return(true))
+        .WillOnce(Return(true))
+        .RetiresOnSaturation();
+    EXPECT_TRUE(Invoke(All(mock, mock, mock, mock), "Foo"sv));
 
-  EXPECT_CALL(mock, Call("Bar"))
-      .Times(3)
-      .WillOnce(Return(true))
-      .WillOnce(Return(true))
-      .WillOnce(Return(false))
-      .RetiresOnSaturation();
-  EXPECT_FALSE(Invoke(All(mock, mock, mock, mock), "Bar"sv));
+    EXPECT_CALL(mock, Call("Bar"))
+        .Times(3)
+        .WillOnce(Return(true))
+        .WillOnce(Return(true))
+        .WillOnce(Return(false))
+        .RetiresOnSaturation();
+    EXPECT_FALSE(Invoke(All(mock, mock, mock, mock), "Bar"sv));
 
-  EXPECT_CALL(mock, Call("Baz"))
-      .Times(1)
-      .WillOnce(Return(false))
-      .RetiresOnSaturation();
-  EXPECT_FALSE(Invoke(All(mock, mock, mock, mock), "Baz"sv));
+    EXPECT_CALL(mock, Call("Baz"))
+        .Times(1)
+        .WillOnce(Return(false))
+        .RetiresOnSaturation();
+    EXPECT_FALSE(Invoke(All(mock, mock, mock, mock), "Baz"sv));
+  }
+
+  {
+    ::testing::StrictMock<CallableMock<bool, std::string_view, int>> mock;
+    using arg_t = typename decltype(mock)::arg_t;
+    using testing::Return;
+
+    EXPECT_CALL(mock, Call(arg_t{"Foo"sv, 42}))
+        .Times(3)
+        .WillOnce(Return(true))
+        .WillOnce(Return(true))
+        .WillOnce(Return(false))
+        .RetiresOnSaturation();
+    EXPECT_FALSE(Invoke(All(mock, mock, mock, mock), "Foo"sv, 42));
+  }
 }
 
 TEST(TestMatchers, Any) {
-  ::testing::StrictMock<CallableMock<bool, std::string_view>> mock;
-  using testing::Return;
+  {
+    ::testing::StrictMock<CallableMock<bool, std::string_view>> mock;
+    using testing::Return;
 
-  EXPECT_CALL(mock, Call("Foo"))
-      .Times(1)
-      .WillOnce(Return(true))
-      .RetiresOnSaturation();
-  EXPECT_TRUE(Invoke(Any(mock, mock, mock, mock), "Foo"sv));
+    EXPECT_CALL(mock, Call("Foo"))
+        .Times(1)
+        .WillOnce(Return(true))
+        .RetiresOnSaturation();
+    EXPECT_TRUE(Invoke(Any(mock, mock, mock, mock), "Foo"sv));
 
-  EXPECT_CALL(mock, Call("Bar"))
-      .Times(3)
-      .WillOnce(Return(false))
-      .WillOnce(Return(false))
-      .WillOnce(Return(true))
-      .RetiresOnSaturation();
-  EXPECT_TRUE(Invoke(Any(mock, mock, mock, mock), "Bar"sv));
+    EXPECT_CALL(mock, Call("Bar"))
+        .Times(3)
+        .WillOnce(Return(false))
+        .WillOnce(Return(false))
+        .WillOnce(Return(true))
+        .RetiresOnSaturation();
+    EXPECT_TRUE(Invoke(Any(mock, mock, mock, mock), "Bar"sv));
 
-  EXPECT_CALL(mock, Call("Baz"))
-      .Times(4)
-      .WillOnce(Return(false))
-      .WillOnce(Return(false))
-      .WillOnce(Return(false))
-      .WillOnce(Return(false))
-      .RetiresOnSaturation();
-  EXPECT_FALSE(Invoke(Any(mock, mock, mock, mock), "Baz"sv));
+    EXPECT_CALL(mock, Call("Baz"))
+        .Times(4)
+        .WillOnce(Return(false))
+        .WillOnce(Return(false))
+        .WillOnce(Return(false))
+        .WillOnce(Return(false))
+        .RetiresOnSaturation();
+    EXPECT_FALSE(Invoke(Any(mock, mock, mock, mock), "Baz"sv));
+  }
+
+  {
+    ::testing::StrictMock<CallableMock<bool, std::string_view, int>> mock;
+    using arg_t = typename decltype(mock)::arg_t;
+    using testing::Return;
+
+    EXPECT_CALL(mock, Call(arg_t{"Foo"sv, 42}))
+        .Times(3)
+        .WillOnce(Return(false))
+        .WillOnce(Return(false))
+        .WillOnce(Return(true))
+        .RetiresOnSaturation();
+    EXPECT_TRUE(Invoke(Any(mock, mock, mock, mock), "Foo"sv, 42));
+  }
 }
 
 TEST(TestMatchers, OnArgs) {
@@ -323,6 +356,10 @@ TEST(TestMatchers, OnArgs) {
   EXPECT_TRUE(Invoke(OnArg<0>(mock), "Foo"sv, 1, 4, "Bar"sv));
   EXPECT_FALSE(Invoke(OnArg<3>(mock), 1, 4, "Bar"sv, "Foo"sv));
   EXPECT_TRUE(Invoke(OnArg<1>(mock), 1, "Foo"sv, 4, "Bar"sv));
+
+  EXPECT_TRUE(Invoke(All(OnArg<0>(Ge(0)), OnArg<1>(Eq("Foo"sv)),
+                         OnArg<2>(Eq(4)), OnArg<3>(Eq("Bar"sv))),
+                     1, "Foo"sv, 4, "Bar"sv));
 }
 
 TEST(TestMatchers, AllArgs) {
@@ -417,4 +454,4 @@ TEST(TestMatchers, AnyArgs) {
 
 }  // namespace
 
-}  // namespace atb::matchers
+}  // namespace atb

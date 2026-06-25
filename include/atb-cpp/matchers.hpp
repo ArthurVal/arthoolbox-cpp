@@ -7,7 +7,7 @@
 
 #include "atb-cpp/type_traits.hpp"
 
-namespace atb::matchers {
+namespace atb {
 
 namespace details {
 
@@ -150,15 +150,21 @@ constexpr auto Not(Matcher&& m) noexcept {
 /// Returns true if ALL matchers returns true
 template <class... Matchers>
 constexpr auto All(Matchers&&... m) noexcept {
-  return
-      [&](auto&& v) { return (Invoke(std::forward<Matchers>(m), v) && ...); };
+  return [&](auto&&... v) {
+    return (
+        Invoke(std::forward<Matchers>(m), std::forward<decltype(v)>(v)...) &&
+        ...);
+  };
 }
 
 /// Returns true if ONE OF the matchers returns true
 template <class... Matchers>
 constexpr auto Any(Matchers&&... m) noexcept {
-  return
-      [&](auto&& v) { return (Invoke(std::forward<Matchers>(m), v) || ...); };
+  return [&](auto&&... v) {
+    return (
+        Invoke(std::forward<Matchers>(m), std::forward<decltype(v)>(v)...) ||
+        ...);
+  };
 }
 
 // COMPOSITE ARGS MATCHERS //////////////////////////////////////////////////
@@ -191,4 +197,4 @@ constexpr auto AnyArgs(Matcher&& m) noexcept {
   };
 }
 
-}  // namespace atb::matchers
+}  // namespace atb
