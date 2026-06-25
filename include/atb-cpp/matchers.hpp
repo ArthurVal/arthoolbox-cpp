@@ -168,10 +168,9 @@ constexpr auto Near(T expected, ErrorType abs_error = 1e-6) noexcept {
 
 /// Returns the negation of m(v)
 template <class Matcher>
-constexpr auto Not(Matcher&& m) noexcept {
-  return [&](auto&& v) -> bool {
-    return !IsMatching(std::forward<Matcher>(m), std::forward<decltype(v)>(v));
-  };
+constexpr auto Not(Matcher m) noexcept {
+  return
+      [m = std::move(m)](const auto& v) -> bool { return !IsMatching(m, v); };
 }
 
 /// Returns true if ALL matchers returns true
