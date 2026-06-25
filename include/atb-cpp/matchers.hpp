@@ -89,50 +89,60 @@ constexpr auto Invoke(Matcher&& m, Args&&... args) -> bool {
 /// Returns Value
 template <bool Value>
 constexpr auto Always() noexcept {
-  return [](auto...) noexcept { return Value; };
+  return [](auto...) noexcept -> bool { return Value; };
 }
 
 /// Returns true when v == expected
 template <class T>
 constexpr auto Eq(const T& expected) noexcept {
-  return [&](auto&& v) { return std::forward<decltype(v)>(v) == expected; };
+  return [&](auto&& v) -> bool {
+    return std::forward<decltype(v)>(v) == expected;
+  };
 }
 
 /// Returns true when v != expected
 template <class T>
 constexpr auto Ne(const T& expected) noexcept {
-  return [&](auto&& v) { return std::forward<decltype(v)>(v) != expected; };
+  return [&](auto&& v) -> bool {
+    return std::forward<decltype(v)>(v) != expected;
+  };
 }
 
 /// Returns true when v >= expected
 template <class T>
 constexpr auto Ge(const T& expected) noexcept {
-  return [&](auto&& v) { return std::forward<decltype(v)>(v) >= expected; };
+  return [&](auto&& v) -> bool {
+    return std::forward<decltype(v)>(v) >= expected;
+  };
 }
 
 /// Returns true when v > expected
 template <class T>
 constexpr auto Gt(const T& expected) noexcept {
-  return [&](auto&& v) { return std::forward<decltype(v)>(v) > expected; };
+  return
+      [&](auto&& v) -> bool { return std::forward<decltype(v)>(v) > expected; };
 }
 
 /// Returns true when v <= expected
 template <class T>
 constexpr auto Le(const T& expected) noexcept {
-  return [&](auto&& v) { return std::forward<decltype(v)>(v) <= expected; };
+  return [&](auto&& v) -> bool {
+    return std::forward<decltype(v)>(v) <= expected;
+  };
 }
 
 /// Returns true when v < expected
 template <class T>
 constexpr auto Lt(const T& expected) noexcept {
-  return [&](auto&& v) { return std::forward<decltype(v)>(v) < expected; };
+  return
+      [&](auto&& v) -> bool { return std::forward<decltype(v)>(v) < expected; };
 }
 
 // Returns true when |v - expected| <= abs_error
 template <class T, class ErrorType = double>
 constexpr auto Near(const T& expected,
                     const ErrorType& abs_error = 1e-6) noexcept {
-  return [&](auto&& v) {
+  return [&](auto&& v) -> bool {
     return (std::abs(std::forward<decltype(v)>(v) - expected) <= abs_error);
   };
 }
@@ -142,7 +152,7 @@ constexpr auto Near(const T& expected,
 /// Returns the negation of m(v)
 template <class Matcher>
 constexpr auto Not(Matcher&& m) noexcept {
-  return [&](auto&& v) {
+  return [&](auto&& v) -> bool {
     return !Invoke(std::forward<Matcher>(m), std::forward<decltype(v)>(v));
   };
 }
@@ -150,7 +160,7 @@ constexpr auto Not(Matcher&& m) noexcept {
 /// Returns true if ALL matchers returns true
 template <class... Matchers>
 constexpr auto All(Matchers&&... m) noexcept {
-  return [&](auto&&... v) {
+  return [&](auto&&... v) -> bool {
     return (
         Invoke(std::forward<Matchers>(m), std::forward<decltype(v)>(v)...) &&
         ...);
@@ -160,7 +170,7 @@ constexpr auto All(Matchers&&... m) noexcept {
 /// Returns true if ONE OF the matchers returns true
 template <class... Matchers>
 constexpr auto Any(Matchers&&... m) noexcept {
-  return [&](auto&&... v) {
+  return [&](auto&&... v) -> bool {
     return (
         Invoke(std::forward<Matchers>(m), std::forward<decltype(v)>(v)...) ||
         ...);
@@ -172,7 +182,7 @@ constexpr auto Any(Matchers&&... m) noexcept {
 /// Returns m(v) by selecting the Ith argument v from a pack of arguments
 template <std::size_t I, class Matcher>
 constexpr auto OnArg(Matcher&& m) noexcept {
-  return [&](auto&&... v) {
+  return [&](auto&&... v) -> bool {
     static_assert(I < sizeof...(v), "Too few arguments");
     auto values = std::forward_as_tuple(std::forward<decltype(v)>(v)...);
     return Invoke(std::forward<Matcher>(m), std::get<I>(values));
@@ -182,7 +192,7 @@ constexpr auto OnArg(Matcher&& m) noexcept {
 /// Returns true if m returns true for ALL the input arguments
 template <class Matcher>
 constexpr auto AllArgs(Matcher&& m) noexcept {
-  return [&](auto&&... v) {
+  return [&](auto&&... v) -> bool {
     return (Invoke(std::forward<Matcher>(m), std::forward<decltype(v)>(v)) &&
             ...);
   };
@@ -191,7 +201,7 @@ constexpr auto AllArgs(Matcher&& m) noexcept {
 /// Returns true if m returns true for at least ONE argument
 template <class Matcher>
 constexpr auto AnyArgs(Matcher&& m) noexcept {
-  return [&](auto&&... v) {
+  return [&](auto&&... v) -> bool {
     return (Invoke(std::forward<Matcher>(m), std::forward<decltype(v)>(v)) ||
             ...);
   };

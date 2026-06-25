@@ -12,6 +12,7 @@ using tests::ComparableMock;
 #include "gtest/gtest.h"
 
 namespace atb {
+
 namespace {
 
 template <class R, class... Args>
