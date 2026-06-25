@@ -255,7 +255,7 @@ TEST(TestMatchers, Not) {
   EXPECT_TRUE(IsMatching(atb::Not(std::ref(mock)), 3));
 }
 
-TEST(TestMatchers, All) {
+TEST(TestMatchers, AllOf) {
   {
     ::testing::StrictMock<CallableMock<bool, std::string_view>> mock;
     using testing::Return;
@@ -307,7 +307,7 @@ TEST(TestMatchers, All) {
   }
 }
 
-TEST(TestMatchers, Any) {
+TEST(TestMatchers, AnyOf) {
   {
     ::testing::StrictMock<CallableMock<bool, std::string_view>> mock;
     using testing::Return;
