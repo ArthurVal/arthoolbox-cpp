@@ -265,10 +265,9 @@ class AnyMatcher {
   ~AnyMatcher() noexcept = default;
 
   /// Construct AnyMatcher from any ohter matcher like object
-  template <
-      class Matcher,
-      std::enable_if_t<not std::is_same_v<AnyMatcher, std::decay_t<Matcher>>,
-                       bool> = true>
+  template <class Matcher,
+            std::enable_if_t<!std::is_same_v<AnyMatcher, std::decay_t<Matcher>>,
+                             bool> = true>
   constexpr explicit AnyMatcher(Matcher&& m)
       : m_interface(std::make_unique<Wrapper<std::decay_t<Matcher>>>(
             std::forward<Matcher>(m))) {
@@ -276,10 +275,9 @@ class AnyMatcher {
   }
 
   /// Assign the AnyMatcher to point to an other matcher
-  template <
-      class Matcher,
-      std::enable_if_t<not std::is_same_v<AnyMatcher, std::decay_t<Matcher>>,
-                       bool> = true>
+  template <class Matcher,
+            std::enable_if_t<!std::is_same_v<AnyMatcher, std::decay_t<Matcher>>,
+                             bool> = true>
   constexpr auto operator=(Matcher&& m) -> AnyMatcher& {
     *this = AnyMatcher(std::forward<Matcher>(m));
     return *this;
