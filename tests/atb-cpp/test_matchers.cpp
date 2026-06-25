@@ -16,36 +16,40 @@ namespace atb {
 namespace {
 
 template <class R, class... Args>
-struct MatcherFreeFunctionMock : CallableMock<R, Args...> {
-  using return_t = typename CallableMock<R, Args...>::return_t;
-  using arg_t = typename CallableMock<R, Args...>::arg_t;
+struct MatcherFreeFunctionMock : public CallableMock<R, const Args&...> {
+  using Base = CallableMock<R, const Args&...>;
+
+  using arg_t = typename Base::arg_t;
+  using return_t = typename Base::return_t;
 
   MOCK_METHOD(return_t, FreeFunctionCall, (arg_t), (const));
   friend constexpr auto IsMatching(const MatcherFreeFunctionMock& mock,
-                                   Args... args) -> return_t {
+                                   const Args&... args) -> return_t {
     if constexpr (sizeof...(Args) == 0) {
       return mock.FreeFunctionCall();
     } else if constexpr (sizeof...(Args) == 1) {
-      return mock.FreeFunctionCall(std::move(args)...);
+      return mock.FreeFunctionCall(args...);
     } else {
-      return mock.FreeFunctionCall(std::make_tuple(std::move(args)...));
+      return mock.FreeFunctionCall(arg_t{args...});
     }
   }
 };
 
 template <class R, class... Args>
-struct MatcherMethodMock : MatcherFreeFunctionMock<R, Args...> {
-  using return_t = typename CallableMock<R, Args...>::return_t;
-  using arg_t = typename CallableMock<R, Args...>::arg_t;
+struct MatcherMethodMock : public MatcherFreeFunctionMock<R, Args...> {
+  using Base = MatcherFreeFunctionMock<R, Args...>;
+
+  using arg_t = typename Base::arg_t;
+  using return_t = typename Base::return_t;
 
   MOCK_METHOD(return_t, MethodCall, (arg_t), (const));
-  constexpr auto IsMatching(Args... args) const -> return_t {
+  constexpr auto IsMatching(const Args&... args) const -> return_t {
     if constexpr (sizeof...(Args) == 0) {
       return MethodCall();
     } else if constexpr (sizeof...(Args) == 1) {
-      return MethodCall(std::move(args)...);
+      return MethodCall(args...);
     } else {
-      return MethodCall(std::make_tuple(std::move(args)...));
+      return MethodCall(arg_t{args...});
     }
   }
 };
