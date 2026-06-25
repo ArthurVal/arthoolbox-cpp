@@ -396,7 +396,7 @@ TEST(TestMatchers, AllArgs) {
         .WillOnce(Return(true))
         .RetiresOnSaturation();
 
-    EXPECT_TRUE(IsMatching(AllArgs(std::ref(mock)), "Foo"sv, "Bar"sv));
+    EXPECT_TRUE(IsMatching(atb::AllArgs(std::ref(mock)), "Foo"sv, "Bar"sv));
   }
 
   {
@@ -411,7 +411,7 @@ TEST(TestMatchers, AllArgs) {
         .WillOnce(Return(false))
         .RetiresOnSaturation();
 
-    EXPECT_FALSE(IsMatching(AllArgs(std::ref(mock)), "Foo"sv, "Bar"sv));
+    EXPECT_FALSE(IsMatching(atb::AllArgs(std::ref(mock)), "Foo"sv, "Bar"sv));
   }
 
   {
@@ -421,7 +421,7 @@ TEST(TestMatchers, AllArgs) {
         .WillOnce(Return(false))
         .RetiresOnSaturation();
 
-    EXPECT_FALSE(IsMatching(AllArgs(std::ref(mock)), "Foo"sv, "Bar"sv));
+    EXPECT_FALSE(IsMatching(atb::AllArgs(std::ref(mock)), "Foo"sv, "Bar"sv));
   }
 }
 

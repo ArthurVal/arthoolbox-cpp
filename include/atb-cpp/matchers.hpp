@@ -208,21 +208,17 @@ constexpr auto OnArgs(Matcher m) noexcept {
 
 /// Returns true if m returns true for ALL the input arguments
 template <class Matcher>
-constexpr auto AllArgs(Matcher&& m) noexcept {
-  return [&](auto&&... v) -> bool {
-    return (
-        IsMatching(std::forward<Matcher>(m), std::forward<decltype(v)>(v)) &&
-        ...);
+constexpr auto AllArgs(Matcher m) noexcept {
+  return [m = std::move(m)](const auto&... v) -> bool {
+    return (IsMatching(m, v) && ...);
   };
 }
 
 /// Returns true if m returns true for at least ONE argument
 template <class Matcher>
-constexpr auto AnyArgs(Matcher&& m) noexcept {
-  return [&](auto&&... v) -> bool {
-    return (
-        IsMatching(std::forward<Matcher>(m), std::forward<decltype(v)>(v)) ||
-        ...);
+constexpr auto AnyArgs(Matcher m) noexcept {
+  return [m = std::move(m)](const auto&... v) -> bool {
+    return (IsMatching(m, v) || ...);
   };
 }
 
