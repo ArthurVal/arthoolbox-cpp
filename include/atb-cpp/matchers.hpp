@@ -2,6 +2,7 @@
 
 #include <cmath>
 #include <functional>
+#include <memory>
 #include <tuple>
 #include <utility>
 
@@ -18,8 +19,6 @@ using IsMatchingMethod =
 template <class M, class... Args>
 using IsMatchingFreeFunction =
     decltype(IsMatching(std::declval<M>(), std::declval<Args>()...));
-
-}  // namespace details
 
 /// Generic Matcher Traits containing meta informations of a Matcher, for a
 /// given set of arguments
@@ -59,8 +58,6 @@ struct MatcherTraits {
   }
 };
 
-namespace details {
-
 /// Prevent fall backs for the CPO
 void IsMatching() = delete;
 
@@ -86,6 +83,7 @@ struct IsMatching_fn {
 };
 
 }  // namespace details
+}  // namespace atb
 
 /// Main function use to call ANY matcher
 ///
@@ -97,7 +95,9 @@ struct IsMatching_fn {
 /// 2. FreeFunction
 /// 3. Call operator
 /// 4. Asserts if none available
-inline constexpr details::IsMatching_fn IsMatching{};
+inline constexpr atb::details::IsMatching_fn IsMatching{};
+
+namespace atb {
 
 // COMMON MATCHERS //////////////////////////////////////////////////////////
 
@@ -221,5 +221,99 @@ constexpr auto AnyArgs(Matcher m) noexcept {
     return (IsMatching(m, v) || ...);
   };
 }
+
+// TYPE ERASED MATCHER /////////////////////////////////////////////////////////
+
+/// Type erased matcher, able store ANY matcher at runtime, polymorphically
+template <class... Args>
+class AnyMatcher {
+  /// The virtual interface defining a Matcher
+  struct Interface;
+
+  /// Wrapper class wrapping any matcher
+  template <class Matcher>
+  struct Wrapper;
+
+  /// Opaque ptr pointing to the matcher interface
+  std::unique_ptr<Interface> m_interface;
+
+ public:
+  /// Default ctor disabled
+  constexpr AnyMatcher() = delete;
+
+  /// Copy ctor: clone the underlying interface
+  constexpr AnyMatcher(const AnyMatcher& other)
+      : m_interface(other.m_interface->Clone()) {}
+
+  /// Move ctor: move the underlying interface
+  constexpr AnyMatcher(AnyMatcher&& other)
+      : m_interface(std::move(other.m_interface)) {}
+
+  /// Copy assignment: clone the underlying interface
+  constexpr auto operator=(const AnyMatcher& other) -> AnyMatcher& {
+    m_interface = other.m_interface->Clone();
+    return *this;
+  }
+
+  /// Move assignment: move the underlying interface
+  constexpr auto operator=(AnyMatcher&& other) -> AnyMatcher& {
+    m_interface = std::move(other.m_interface);
+    return *this;
+  }
+
+  /// Dtor
+  ~AnyMatcher() noexcept = default;
+
+  /// Construct AnyMatcher from any ohter matcher like object
+  template <
+      class Matcher,
+      std::enable_if_t<not std::is_same_v<AnyMatcher, std::decay_t<Matcher>>,
+                       bool> = true>
+  constexpr explicit AnyMatcher(Matcher&& m)
+      : m_interface(std::make_unique<Wrapper<std::decay_t<Matcher>>>(
+            std::forward<Matcher>(m))) {
+    details::MatcherTraits<std::decay_t<Matcher>, Args...>::AssertWhenInvalid();
+  }
+
+  /// Assign the AnyMatcher to point to an other matcher
+  template <
+      class Matcher,
+      std::enable_if_t<not std::is_same_v<AnyMatcher, std::decay_t<Matcher>>,
+                       bool> = true>
+  constexpr auto operator=(Matcher&& m) -> AnyMatcher& {
+    *this = AnyMatcher(std::forward<Matcher>(m));
+    return *this;
+  }
+
+  /// Mandatory IsMatching(Args...) -> bool interface
+  constexpr auto IsMatching(const Args&... args) const -> bool {
+    return m_interface->IsMatching(args...);
+  }
+
+ private:
+  struct Interface {
+    virtual ~Interface() noexcept = default;
+    virtual auto Clone() const -> std::unique_ptr<Interface> = 0;
+    virtual auto IsMatching(const Args&... args) const -> bool = 0;
+  };
+
+  template <class Matcher>
+  struct Wrapper final : public Interface {
+    template <class... T>
+    constexpr explicit Wrapper(T&&... args)
+        : m_matcher(std::forward<T>(args)...) {}
+
+    auto Clone() const -> std::unique_ptr<Interface> override {
+      return std::make_unique<Wrapper>(m_matcher);
+    }
+
+    auto IsMatching(const Args&... args) const -> bool override {
+      return ::IsMatching(m_matcher, args...);
+    }
+
+   private:
+    Matcher m_matcher;
+  };
+};
 
 }  // namespace atb

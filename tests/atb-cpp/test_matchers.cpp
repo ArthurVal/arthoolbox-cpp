@@ -470,6 +470,20 @@ TEST(TestMatchers, AnyArgs) {
   }
 }
 
+TEST(TestMatchers, AnyMatcher) {
+  AnyMatcher<int, std::string_view> any_matcher{
+      Always<false>(),
+  };
+  EXPECT_FALSE(IsMatching(any_matcher, 1, "Coucou"sv));
+
+  any_matcher = Always<true>();
+  EXPECT_TRUE(IsMatching(any_matcher, 42, "Chocolatine"sv));
+
+  any_matcher = AllOf(OnArgs<0>(Eq(10)), OnArgs<1>(Eq("Toto"sv)));
+  EXPECT_TRUE(IsMatching(any_matcher, 10, "Toto"sv));
+  EXPECT_FALSE(IsMatching(any_matcher, 10, "Tata"sv));
+}
+
 }  // namespace
 
 }  // namespace atb
