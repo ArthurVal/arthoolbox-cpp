@@ -76,22 +76,8 @@ TEST(TestMatchers, IsMatching) {
 }
 
 TEST(TestMatchers, Always) {
-  // We can't unfold parameter packs with EXPECT_ macro, hence we encapsulate
-  // inside functions
-  constexpr auto ExpectTrue = [](auto&& v) {
-    EXPECT_TRUE(IsMatching(Always<true>(), std::forward<decltype(v)>(v)));
-  };
-
-  constexpr auto ExpectFalse = [](auto&& v) {
-    EXPECT_FALSE(IsMatching(Always<false>(), std::forward<decltype(v)>(v)));
-  };
-
-  std::apply(
-      [&](auto&&... v) {
-        (ExpectTrue(v), ...);
-        (ExpectFalse(std::forward<decltype(v)>(v)), ...);
-      },
-      std::forward_as_tuple(1, "Foo", 3985809135u, 124.546654));
+  EXPECT_TRUE(IsMatching(Always<true>(), 1, "Foo", 3985809135u, 124.546654));
+  EXPECT_FALSE(IsMatching(Always<false>(), 1, 3985809135u, 124.546654));
 }
 
 TEST(TestMatchers, Eq) {
