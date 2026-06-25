@@ -370,13 +370,14 @@ TEST(TestMatchers, OnArgs) {
       .WillOnce(Return(true))
       .RetiresOnSaturation();
 
-  EXPECT_TRUE(IsMatching(OnArg<0>(std::ref(mock)), "Foo"sv, 1, 4, "Bar"sv));
-  EXPECT_FALSE(IsMatching(OnArg<3>(std::ref(mock)), 1, 4, "Bar"sv, "Foo"sv));
-  EXPECT_TRUE(IsMatching(OnArg<1>(std::ref(mock)), 1, "Foo"sv, 4, "Bar"sv));
+  EXPECT_TRUE(IsMatching(OnArgs<0>(std::ref(mock)), "Foo"sv, 1, 4, "Bar"sv));
+  EXPECT_FALSE(IsMatching(OnArgs<3>(std::ref(mock)), 1, 4, "Bar"sv, "Foo"sv));
+  EXPECT_TRUE(IsMatching(OnArgs<1>(std::ref(mock)), 1, "Foo"sv, 4, "Bar"sv));
 
-  EXPECT_TRUE(IsMatching(AllOf(OnArg<0>(Ge(0)), OnArg<1>(Eq("Foo"sv)),
-                               OnArg<2>(Eq(4)), OnArg<3>(Eq("Bar"sv))),
-                         1, "Foo"sv, 4, "Bar"sv));
+  EXPECT_TRUE(IsMatching(
+      AllOf(OnArgs<0>(Ge(0)), OnArgs<2>(Eq(4)),
+            OnArgs<1, 3>([](auto... s) { return ((s.size() == 3) && ...); })),
+      1, "Foo"sv, 4, "Bar"sv));
 }
 
 TEST(TestMatchers, AllArgs) {

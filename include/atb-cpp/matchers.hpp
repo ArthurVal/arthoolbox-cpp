@@ -198,12 +198,11 @@ constexpr auto AnyOf(Matchers... m) noexcept {
 // COMPOSITE ARGS MATCHERS //////////////////////////////////////////////////
 
 /// Returns m(v) by selecting the Ith argument v from a pack of arguments
-template <std::size_t I, class Matcher>
-constexpr auto OnArg(Matcher&& m) noexcept {
-  return [&](auto&&... v) -> bool {
-    static_assert(I < sizeof...(v), "Too few arguments");
-    auto values = std::forward_as_tuple(std::forward<decltype(v)>(v)...);
-    return IsMatching(std::forward<Matcher>(m), std::get<I>(values));
+template <std::size_t... I, class Matcher>
+constexpr auto OnArgs(Matcher m) noexcept {
+  return [m = std::move(m)](const auto&... v) -> bool {
+    auto values = std::tie(v...);
+    return IsMatching(m, std::get<I>(values)...);
   };
 }
 
