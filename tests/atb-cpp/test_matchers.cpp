@@ -456,9 +456,9 @@ TEST(TestMatchers, AnyArgs) {
 }
 
 TEST(TestMatchers, AnyMatcher) {
-  AnyMatcher<int, std::string_view> any_matcher{
-      Always<false>(),
-  };
+  AnyMatcher<int, std::string_view> any_matcher;
+
+  any_matcher = Always<false>();
   EXPECT_FALSE(::IsMatching(any_matcher, 1, "Coucou"sv));
 
   any_matcher = Always<true>();
