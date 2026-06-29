@@ -1,4 +1,5 @@
 #include <string_view>
+#include <vector>
 using namespace std::literals::string_view_literals;
 
 #include "tests/mocks/callable.hpp"
@@ -467,6 +468,15 @@ TEST(TestMatchers, AnyMatcher) {
   any_matcher = AllOf(OnArgs<0>(Eq(10)), OnArgs<1>(Eq("Toto"sv)));
   EXPECT_TRUE(::IsMatching(any_matcher, 10, "Toto"sv));
   EXPECT_FALSE(::IsMatching(any_matcher, 10, "Tata"sv));
+
+  std::vector<AnyMatcher<int>> matchers;
+  matchers.emplace_back(Always<true>());
+  matchers.emplace_back(Ge(20));
+  matchers.emplace_back(Lt(100));
+
+  for (const auto& m : matchers) {
+    EXPECT_TRUE(::IsMatching(m, 42));
+  }
 }
 
 }  // namespace
