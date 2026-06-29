@@ -458,6 +458,8 @@ TEST(TestMatchers, AnyArgs) {
 
 TEST(TestMatchers, AnyMatcher) {
   AnyMatcher<int, std::string_view> any_matcher;
+  EXPECT_DEBUG_DEATH(
+      { ::IsMatching(any_matcher, 1, "Coucou"sv); }, "m_interface != nullptr");
 
   any_matcher = Always<false>();
   EXPECT_FALSE(::IsMatching(any_matcher, 1, "Coucou"sv));
