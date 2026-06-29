@@ -458,9 +458,6 @@ TEST(AtbMatchersTest, AnyArgs) {
 
 TEST(AtbMatchersTest, AnyMatcher) {
   AnyMatcher<int, std::string_view> any_matcher;
-  EXPECT_DEBUG_DEATH(
-      { ::IsMatching(any_matcher, 1, "Coucou"sv); }, "m_interface != nullptr");
-
   any_matcher = Always<false>();
   EXPECT_FALSE(::IsMatching(any_matcher, 1, "Coucou"sv));
 
@@ -479,6 +476,12 @@ TEST(AtbMatchersTest, AnyMatcher) {
   for (const auto& m : matchers) {
     EXPECT_TRUE(::IsMatching(m, 42));
   }
+}
+
+TEST(AtbMatchersDeathTest, AnyMatcher) {
+  AnyMatcher<std::string_view> any_matcher;
+  EXPECT_DEBUG_DEATH(
+      { ::IsMatching(any_matcher, "Coucou"sv); }, "m_interface != nullptr");
 }
 
 }  // namespace
