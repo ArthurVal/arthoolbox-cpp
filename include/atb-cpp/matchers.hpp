@@ -299,12 +299,13 @@ constexpr auto AnyArgs(Matcher m) noexcept {
  *  assert(::IsMatching(m, 19, 10) == false);
  *  assert(::IsMatching(m, 20, 10) == true);
  *
- *  std::vector<AnyMatcher<int, int>> matchers;
- *  matchers.emplace_back()
+ *  std::vector<AnyMatcher<int>> matchers;
+ *  matchers.emplace_back(Ge(10));
+ *  matchers.emplace_back(Le(50));
+ *
+ *  for (const auto& m : matchers) assert(::IsMatching(m, 42) == true);
  *
  *  \endcode
- *
- *
  *
  *  \tparam ...Args Arguments type for the given matcher
  */
@@ -368,7 +369,8 @@ class AnyMatcher final {
 
   /// Mandatory IsMatching(Args...) -> bool interface
   ///
-  /// \pre AnyMatcher has been assigned to a valid matcher (not default constructed)
+  /// \pre AnyMatcher has been assigned to a valid matcher (not default
+  /// constructed)
   constexpr auto IsMatching(const Args&... args) const -> bool {
     assert(m_interface != nullptr);
     return m_interface->IsMatching(args...);
