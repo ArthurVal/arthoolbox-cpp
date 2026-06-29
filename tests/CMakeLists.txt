@@ -18,7 +18,6 @@ if(NOT GTest_FOUND)
 
   include(FetchContent)
   FetchContent_Declare(googletest
-    DOWNLOAD_EXTRACT_TIMESTAMP
     URL ${${PROJECT_NAME}_TESTING_GTEST_URL}
     # FIND_PACKAGE_ARGS NAMES GTest
   )
