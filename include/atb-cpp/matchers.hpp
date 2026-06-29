@@ -272,7 +272,63 @@ constexpr auto AnyArgs(Matcher m) noexcept {
 
 namespace details {
 
-template <class AssertPolicy, class... Args>
+/**
+ *  \brief Type erased polymorphic Matcher for a fix set of input arguments
+ *
+ *  This matcher can be assign to ANY matcher M (i.e. type that are 'valid
+ *  matcher' according to the MatcherTraits) at runtime.
+ *
+ *  It can be used when needing to change Matcher at runtime (vs compile time)
+ *  dynamically or store matchers in a container (std::vector<AnyMatcher> for
+ *  example), etc..
+ *
+ *  Example:
+ *
+ *  \code{.cpp}
+ *
+ *  // Initialze the AnyMatcher
+ *  AnyMatcher<int, int> m;
+ *
+ *  // Un-initialized by default, calling IsMatching here will THROW
+ *  assert(m.IsInitialized() == false);
+ *
+ *  m = Always<false>();
+ *  assert(m.IsInitialized() == true);
+ *
+ *  assert(::IsMatching(m, 42, 24) == false);
+ *  assert(::IsMatching(m, -42, 0) == false);
+ *
+ *  // Change the matcher dynamically
+ *  m = AllArgs(Eq(10));
+ *  assert(::IsMatching(m, -42, 0) == false);
+ *  assert(::IsMatching(m, 10, 10) == true);
+ *
+ *  m = All(AllArgs(Gt(0)), OnArgs<0>(Eq(20)));
+ *  assert(::IsMatching(m, 20, -10) == false);
+ *  assert(::IsMatching(m, 19, 10) == false);
+ *  assert(::IsMatching(m, 20, 10) == true);
+ *
+ *  std::vector<AnyMatcher<int>> matchers;
+ *  matchers.emplace_back(Ge(10));
+ *  matchers.emplace_back(Le(50));
+ *
+ *  for (const auto& m : matchers) assert(::IsMatching(m, 42) == true);
+ *
+ *  \endcode
+ *
+ *  By default, this type erased class is default constructible. In this case,
+ *  it doesn't own any matcher and it is considered 'uninitialized'.
+ *  When calling `IsMatching(...)` while the matcher is uninitialized, it
+ *  behaves based on the UninitializedPolicy provided.
+ *
+ *  This policy is expected to have a `::Assert(void) -> bool` interface that
+ *  dictates what to do whenever the internal matcher is NULL (return false,
+ *  throw an exception, assert, ...).
+ *
+ *  \tparam UninitializedPolicy Policy use when the AnyMatcher is uninitialized
+ *  \tparam ...Args Arguments type for the given matcher
+ */
+template <class UninitializedPolicy, class... Args>
 class AnyMatcherImpl final {
   /// The virtual interface defining a Matcher
   struct Interface;
@@ -344,7 +400,7 @@ class AnyMatcherImpl final {
   /// on the AssertPolicy selected
   constexpr auto IsMatching(const Args&... args) const -> bool {
     if (!IsInitialized()) [[unlikely]] {
-      return AssertPolicy::Assert();
+      return UninitializedPolicy::Assert();
     }
 
     return m_interface->IsMatching(args...);
@@ -376,8 +432,8 @@ class AnyMatcherImpl final {
   };
 };
 
-/// Default AssertPolicy used by the AnyMatcher - Throws an exception
-struct SafelyThrows {
+/// Default UninitializedPolicy used by the AnyMatcher - Throws an exception
+struct Throws {
   static auto Assert() -> bool {
     throw std::runtime_error{
         "AnyMatcher is empty (i.e. not matcher assigned to it)",
@@ -385,8 +441,8 @@ struct SafelyThrows {
   }
 };
 
-/// Unsafe AssertPolicy used by the AnyMatcher - assert() + return false
-struct OnlyAsserts {
+/// Unsafe UninitializedPolicy used by the AnyMatcher - assert() + return false
+struct Asserts {
   static auto Assert() noexcept -> bool {
     assert(false && "AnyMatcher is empty (i.e. not matcher assigned to it)");
     return false;
@@ -396,55 +452,25 @@ struct OnlyAsserts {
 }  // namespace details
 
 /**
- *  \brief Type erased polymorphic Matcher for a fix set of input arguments
+ *  \brief Default AnyMatcher implementation that THROWS when uninitialized
  *
- *  This matcher can be assign to ANY matcher M (i.e. type that are 'valid
- *  matcher' according to the MatcherTraits) at runtime.
+ *  See details::AnyMatcherImpl for more details.
  *
- *  It can be used when needing to change Matcher at runtime (vs compile time)
- *  dynamically or store matchers in a container (std::vector<AnyMatcher> for
- *  example), etc..
- *
- *  Example:
- *  \code{.cpp}
- *
- *  // Initialze the AnyMatcher
- *  AnyMatcher<int, int> m;
- *
- *  // Un-initialized by default, calling IsMatching here will THROW
- *  assert(m.IsInitialized() == false);
- *
- *  m = Always<false>();
- *  assert(m.IsInitialized() == true);
- *
- *  assert(::IsMatching(m, 42, 24) == false);
- *  assert(::IsMatching(m, -42, 0) == false);
- *
- *  // Change the matcher dynamically
- *  m = AllArgs(Eq(10));
- *  assert(::IsMatching(m, -42, 0) == false);
- *  assert(::IsMatching(m, 10, 10) == true);
- *
- *  m = All(AllArgs(Gt(0)), OnArgs<0>(Eq(20)));
- *  assert(::IsMatching(m, 20, -10) == false);
- *  assert(::IsMatching(m, 19, 10) == false);
- *  assert(::IsMatching(m, 20, 10) == true);
- *
- *  std::vector<AnyMatcher<int>> matchers;
- *  matchers.emplace_back(Ge(10));
- *  matchers.emplace_back(Le(50));
- *
- *  for (const auto& m : matchers) assert(::IsMatching(m, 42) == true);
- *
- *  \endcode
- *
- *  \tparam AssertPolicy Policy use when the AnyMatcher is not initialized
  *  \tparam ...Args Arguments type for the given matcher
  */
 template <class... Args>
-using AnyMatcher = details::AnyMatcherImpl<details::SafelyThrows, Args...>;
+using AnyMatcher = details::AnyMatcherImpl<details::Throws, Args...>;
 
+/**
+ *  \brief Unsafe AnyMatcher implementation that assert() when uninitialized
+ *
+ *  See details::AnyMatcherImpl for more details.
+ *
+ *  \note If compiled in release (i.e. with NDEBUG) it always returns false
+ *
+ *  \tparam ...Args Arguments type for the given matcher
+ */
 template <class... Args>
-using UnsafeAnyMatcher = details::AnyMatcherImpl<details::OnlyAsserts, Args...>;
+using UnsafeAnyMatcher = details::AnyMatcherImpl<details::Asserts, Args...>;
 
 }  // namespace atb
