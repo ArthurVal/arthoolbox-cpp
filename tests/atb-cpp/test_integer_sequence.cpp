@@ -4,7 +4,7 @@
 namespace atb {
 namespace {
 
-TEST(TestIntegerSequence, MakeSequence) {
+TEST(AtbIntegerSequenceTest, MakeSequence) {
   static_assert(std::is_same_v<std::integer_sequence<int>,
                                decltype(MakeSequence<int, 0>())>);
 
@@ -24,7 +24,7 @@ TEST(TestIntegerSequence, MakeSequence) {
                                decltype(MakeSequence<int, 3, 3>())>);
 }
 
-TEST(TestIntegerSequence, MakeIndexSequence) {
+TEST(AtbIntegerSequenceTest, MakeIndexSequence) {
   static_assert(std::is_same_v<std::index_sequence<>,
                                decltype(MakeIndexSequence<0, 0>())>);
 

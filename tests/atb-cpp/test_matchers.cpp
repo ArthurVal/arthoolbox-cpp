@@ -52,7 +52,7 @@ struct MatcherMethodMock : public MatcherFreeFunctionMock<Args...> {
   }
 };
 
-TEST(TestMatchers, IsMatching) {
+TEST(AtbMatchersTest, IsMatching) {
   using ::testing::Return;
 
   ::testing::StrictMock<CallableMock<bool, int>> only_call;
@@ -76,12 +76,12 @@ TEST(TestMatchers, IsMatching) {
                             call_and_free_function_and_method, 5));
 }
 
-TEST(TestMatchers, Always) {
+TEST(AtbMatchersTest, Always) {
   EXPECT_TRUE(::IsMatching(Always<true>(), 1, "Foo", 3985809135u, 124.546654));
   EXPECT_FALSE(::IsMatching(Always<false>(), 1, 3985809135u, 124.546654));
 }
 
-TEST(TestMatchers, Eq) {
+TEST(AtbMatchersTest, Eq) {
   ::testing::StrictMock<tests::EqMock<bool, int>> mock;
   using testing::Return;
 
@@ -110,7 +110,7 @@ TEST(TestMatchers, Eq) {
   EXPECT_FALSE(::IsMatching(atb::Eq(std::ref(mock)), 6));
 }
 
-TEST(TestMatchers, Ne) {
+TEST(AtbMatchersTest, Ne) {
   ::testing::StrictMock<tests::NeMock<bool, int>> mock;
 
   using testing::Return;
@@ -139,7 +139,7 @@ TEST(TestMatchers, Ne) {
   EXPECT_FALSE(::IsMatching(atb::Ne(std::ref(mock)), 6));
 }
 
-TEST(TestMatchers, Ge) {
+TEST(AtbMatchersTest, Ge) {
   ::testing::StrictMock<ComparableMock<bool, int>> mock;
   using testing::Return;
   EXPECT_CALL(mock, Ge(3, ArgSide::Right))
@@ -159,7 +159,7 @@ TEST(TestMatchers, Ge) {
   EXPECT_FALSE(atb::Ge(std::ref(mock))(4));
 }
 
-TEST(TestMatchers, Gt) {
+TEST(AtbMatchersTest, Gt) {
   ::testing::StrictMock<ComparableMock<bool, int>> mock;
   using testing::Return;
   EXPECT_CALL(mock, Gt(3, ArgSide::Right))
@@ -179,7 +179,7 @@ TEST(TestMatchers, Gt) {
   EXPECT_FALSE(::IsMatching(atb::Gt(std::ref(mock)), 4));
 }
 
-TEST(TestMatchers, Le) {
+TEST(AtbMatchersTest, Le) {
   ::testing::StrictMock<ComparableMock<bool, int>> mock;
   using testing::Return;
   EXPECT_CALL(mock, Le(3, ArgSide::Right))
@@ -199,7 +199,7 @@ TEST(TestMatchers, Le) {
   EXPECT_FALSE(::IsMatching(atb::Le(std::ref(mock)), 4));
 }
 
-TEST(TestMatchers, Lt) {
+TEST(AtbMatchersTest, Lt) {
   ::testing::StrictMock<ComparableMock<bool, int>> mock;
   using testing::Return;
   EXPECT_CALL(mock, Lt(3, ArgSide::Right))
@@ -219,7 +219,7 @@ TEST(TestMatchers, Lt) {
   EXPECT_FALSE(::IsMatching(atb::Lt(std::ref(mock)), 4));
 }
 
-TEST(TestMatchers, Near) {
+TEST(AtbMatchersTest, Near) {
   // TODO: Use mocks (Arithmetic + Comparable) instead
   EXPECT_TRUE(Near(3.14)(3.14));
   EXPECT_FALSE(Near(3.14)(3.15));
@@ -229,7 +229,7 @@ TEST(TestMatchers, Near) {
   EXPECT_FALSE(Near(3.14, 1.)(5.14));
 }
 
-TEST(TestMatchers, Not) {
+TEST(AtbMatchersTest, Not) {
   ::testing::StrictMock<CallableMock<bool, int>> mock;
   using testing::Return;
   EXPECT_CALL(mock, Call(3))
@@ -241,7 +241,7 @@ TEST(TestMatchers, Not) {
   EXPECT_TRUE(::IsMatching(atb::Not(std::ref(mock)), 3));
 }
 
-TEST(TestMatchers, AllOf) {
+TEST(AtbMatchersTest, AllOf) {
   {
     ::testing::StrictMock<CallableMock<bool, std::string_view>> mock;
     using testing::Return;
@@ -293,7 +293,7 @@ TEST(TestMatchers, AllOf) {
   }
 }
 
-TEST(TestMatchers, AnyOf) {
+TEST(AtbMatchersTest, AnyOf) {
   {
     ::testing::StrictMock<CallableMock<bool, std::string_view>> mock;
     using testing::Return;
@@ -345,7 +345,7 @@ TEST(TestMatchers, AnyOf) {
   }
 }
 
-TEST(TestMatchers, OnArgs) {
+TEST(AtbMatchersTest, OnArgs) {
   ::testing::StrictMock<CallableMock<bool, std::string_view>> mock;
   using testing::Return;
 
@@ -366,7 +366,7 @@ TEST(TestMatchers, OnArgs) {
       1, "Foo"sv, 4, "Bar"sv));
 }
 
-TEST(TestMatchers, AllArgs) {
+TEST(AtbMatchersTest, AllArgs) {
   ::testing::StrictMock<CallableMock<bool, std::string_view>> mock;
   using testing::Return;
 
@@ -411,7 +411,7 @@ TEST(TestMatchers, AllArgs) {
   }
 }
 
-TEST(TestMatchers, AnyArgs) {
+TEST(AtbMatchersTest, AnyArgs) {
   ::testing::StrictMock<CallableMock<bool, std::string_view>> mock;
   using testing::Return;
 
@@ -456,7 +456,7 @@ TEST(TestMatchers, AnyArgs) {
   }
 }
 
-TEST(TestMatchers, AnyMatcher) {
+TEST(AtbMatchersTest, AnyMatcher) {
   AnyMatcher<int, std::string_view> any_matcher;
   EXPECT_DEBUG_DEATH(
       { ::IsMatching(any_matcher, 1, "Coucou"sv); }, "m_interface != nullptr");

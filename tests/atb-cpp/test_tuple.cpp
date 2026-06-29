@@ -24,7 +24,7 @@ auto FailWhenCalled(std::unique_ptr<::testing::ScopedTrace> trace = nullptr) {
   FailWhenCalled(                    \
       std::make_unique<::testing::ScopedTrace>(__FILE__, __LINE__, (msg)))
 
-TEST(TestTuple, Apply) {
+TEST(AtbTupleTest, Apply) {
   EXPECT_EQ(50 + 1 + 5,
             (tpl::Apply(Add, std::make_tuple(50, 1, 5, 4, 5452, "Coucou"),
                         MakeIndexSequence<3>())));
@@ -44,7 +44,7 @@ TEST(TestTuple, Apply) {
   EXPECT_EQ((1 + 2 + 3), (tpl::Apply(Add, std::make_tuple(1, 2, 3))));
 }
 
-TEST(TestTuple, Visit) {
+TEST(AtbTupleTest, Visit) {
   // Empty tuple
   tpl::Visit(FailWhenCalledWithTrace(""), std::make_tuple());
   tpl::Visit(FailWhenCalledWithTrace(""), std::make_tuple(1, 2, 3),
@@ -115,7 +115,7 @@ struct Accumulator {
   }
 };
 
-TEST(TestTuple, Reduce) {
+TEST(AtbTupleTest, Reduce) {
   // Empty tuple
   EXPECT_EQ(42,
             tpl::Reduce(42, FailWhenCalledWithTrace(""), std::make_tuple()));
@@ -154,7 +154,7 @@ TEST(TestTuple, Reduce) {
   EXPECT_EQ(acc.accumulated, (3 + (5 + 3 + 0 + 5 - 100)));
 }
 
-TEST(TestTuple, Transform) {
+TEST(AtbTupleTest, Transform) {
   // Empty tuple
   EXPECT_EQ(std::make_tuple(),
             tpl::Transform(FailWhenCalledWithTrace(""), std::make_tuple(3, 4),
@@ -202,7 +202,7 @@ TEST(TestTuple, Transform) {
                            std::make_tuple("Bar"sv, 1, 0.)));
 }
 
-TEST(TestTuple, TransformReduce) {
+TEST(AtbTupleTest, TransformReduce) {
   EXPECT_EQ((10 + (2 * 1) + (4 * 3)),
             tpl::TransformReduce(10, Add, Mul, std::make_tuple(2, 4, 6),
                                  std::make_tuple(1, 3)));
