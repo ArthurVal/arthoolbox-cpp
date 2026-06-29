@@ -458,48 +458,48 @@ TEST(AtbMatchersTest, AnyArgs) {
 }
 
 TEST(AtbMatchersTest, AnyMatcher) {
-  using AnyMatcherType = AnyMatcher<int, std::string_view>;
+  using matcher_t = AnyMatcher<int, std::string_view>;
 
-  AnyMatcherType any_matcher;
-  EXPECT_FALSE(any_matcher.IsInitialized());
-  EXPECT_THROW(::IsMatching(any_matcher, 1, "Coucou"sv), std::runtime_error);
+  matcher_t any;
+  EXPECT_FALSE(any.IsInitialized());
+  EXPECT_THROW(::IsMatching(any, 1, "Coucou"sv), std::runtime_error);
 
-  any_matcher = Always<false>();
-  EXPECT_TRUE(any_matcher.IsInitialized());
-  EXPECT_FALSE(::IsMatching(any_matcher, 1, "Coucou"sv));
+  any = Always<false>();
+  EXPECT_TRUE(any.IsInitialized());
+  EXPECT_FALSE(::IsMatching(any, 1, "Coucou"sv));
 
-  any_matcher = Always<true>();
-  EXPECT_TRUE(any_matcher.IsInitialized());
-  EXPECT_TRUE(::IsMatching(any_matcher, 42, "Chocolatine"sv));
+  any = Always<true>();
+  EXPECT_TRUE(any.IsInitialized());
+  EXPECT_TRUE(::IsMatching(any, 42, "Chocolatine"sv));
 
-  any_matcher = AllOf(OnArgs<0>(Eq(10)), OnArgs<1>(Eq("Toto"sv)));
-  EXPECT_TRUE(any_matcher.IsInitialized());
-  EXPECT_TRUE(::IsMatching(any_matcher, 10, "Toto"sv));
-  EXPECT_FALSE(::IsMatching(any_matcher, 10, "Tata"sv));
+  any = AllOf(OnArgs<0>(Eq(10)), OnArgs<1>(Eq("Toto"sv)));
+  EXPECT_TRUE(any.IsInitialized());
+  EXPECT_TRUE(::IsMatching(any, 10, "Toto"sv));
+  EXPECT_FALSE(::IsMatching(any, 10, "Tata"sv));
 
-  AnyMatcherType any_matcher_other;
-  EXPECT_FALSE(any_matcher_other.IsInitialized());
-  EXPECT_TRUE(any_matcher.IsInitialized());
+  matcher_t other;
+  EXPECT_FALSE(other.IsInitialized());
+  EXPECT_TRUE(any.IsInitialized());
 
   // Copy
-  any_matcher_other = any_matcher;
-  EXPECT_TRUE(any_matcher_other.IsInitialized());
-  EXPECT_TRUE(any_matcher.IsInitialized());
+  other = any;
+  EXPECT_TRUE(other.IsInitialized());
+  EXPECT_TRUE(any.IsInitialized());
 
   for (const auto& m : std::array{
-           static_cast<const AnyMatcherType&>(any_matcher),
-           static_cast<const AnyMatcherType&>(any_matcher_other),
+           static_cast<const matcher_t&>(any),
+           static_cast<const matcher_t&>(other),
        }) {
     EXPECT_TRUE(::IsMatching(m, 10, "Toto"sv));
     EXPECT_FALSE(::IsMatching(m, 10, "Tata"sv));
   }
 
   // Move
-  any_matcher_other = std::move(any_matcher);
-  EXPECT_FALSE(any_matcher.IsInitialized());
-  EXPECT_TRUE(any_matcher_other.IsInitialized());
-  EXPECT_TRUE(::IsMatching(any_matcher_other, 10, "Toto"sv));
-  EXPECT_FALSE(::IsMatching(any_matcher_other, 10, "Tata"sv));
+  other = std::move(any);
+  EXPECT_FALSE(any.IsInitialized());
+  EXPECT_TRUE(other.IsInitialized());
+  EXPECT_TRUE(::IsMatching(other, 10, "Toto"sv));
+  EXPECT_FALSE(::IsMatching(other, 10, "Tata"sv));
 
   // Showcase container feature of type erased
   std::vector<AnyMatcher<int>> matchers;
@@ -507,6 +507,53 @@ TEST(AtbMatchersTest, AnyMatcher) {
   matchers.emplace_back(Ge(20));
   matchers.emplace_back(Lt(100));
   for (const auto& m : matchers) EXPECT_TRUE(::IsMatching(m, 42));
+}
+
+TEST(AtbMatchersTest, UnsafeAnyMatcher) {
+  UnsafeAnyMatcher<int> unsafe;
+  EXPECT_FALSE(unsafe.IsInitialized());
+
+  unsafe = Ge(500);
+  EXPECT_TRUE(unsafe.IsInitialized());
+  EXPECT_FALSE(::IsMatching(unsafe, 10));
+  EXPECT_TRUE(::IsMatching(unsafe, 10000));
+
+  unsafe = Le(500);
+  EXPECT_TRUE(unsafe.IsInitialized());
+  EXPECT_TRUE(::IsMatching(unsafe, 10));
+  EXPECT_FALSE(::IsMatching(unsafe, 10000));
+
+  UnsafeAnyMatcher<int> other;
+  EXPECT_FALSE(other.IsInitialized());
+  EXPECT_TRUE(unsafe.IsInitialized());
+
+  // Copy
+  other = unsafe;  // Le(500)
+  EXPECT_TRUE(other.IsInitialized());
+  EXPECT_TRUE(unsafe.IsInitialized());
+
+  for (const auto& m : std::array{
+           static_cast<const UnsafeAnyMatcher<int>&>(unsafe),
+           static_cast<const UnsafeAnyMatcher<int>&>(other),
+       }) {
+    EXPECT_FALSE(::IsMatching(m, 1234567));
+    EXPECT_TRUE(::IsMatching(m, 10));
+  }
+
+  // Move
+  other = std::move(unsafe);
+  EXPECT_FALSE(unsafe.IsInitialized());
+
+  EXPECT_TRUE(other.IsInitialized());
+  EXPECT_FALSE(::IsMatching(other, 5000));
+  EXPECT_TRUE(::IsMatching(other, 10));
+}
+
+TEST(AtbMatchersDeathTest, UnsafeAnyMatcher) {
+  UnsafeAnyMatcher<int> unsafe;
+  EXPECT_FALSE(unsafe.IsInitialized());
+  EXPECT_DEBUG_DEATH(
+      { EXPECT_FALSE(::IsMatching(unsafe, 42)); }, "AnyMatcher is empty");
 }
 
 }  // namespace

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cassert>
 #include <cmath>       // std::abs()
 #include <functional>  // std::invoke()/is_invokable_r/...
 #include <memory>      // std::unique_ptr
@@ -269,48 +270,10 @@ constexpr auto AnyArgs(Matcher m) noexcept {
 
 // TYPE ERASED MATCHER /////////////////////////////////////////////////////////
 
-/**
- *  \brief Type erased polymorphic Matcher for a fix set of input arguments
- *
- *  This matcher can be assign to ANY matcher M (i.e. type that are 'valid
- *  matcher' according to the MatcherTraits) at runtime.
- *
- *  It can be used when needing to change Matcher at runtime (vs compile time)
- *  dynamically or store matchers in a container (std::vector<AnyMatcher> for
- *  example), etc..
- *
- *  Example:
- *  \code{.cpp}
- *
- *  // Initialze the AnyMatcher
- *  AnyMatcher<int, int> m;
- *
- *  m = Always<false>();
- *  assert(::IsMatching(m, 42, 24) == false);
- *  assert(::IsMatching(m, -42, 0) == false);
- *
- *  // Change the matcher dynamically
- *  m = AllArgs(Eq(10));
- *  assert(::IsMatching(m, -42, 0) == false);
- *  assert(::IsMatching(m, 10, 10) == true);
- *
- *  m = All(AllArgs(Gt(0)), OnArgs<0>(Eq(20)));
- *  assert(::IsMatching(m, 20, -10) == false);
- *  assert(::IsMatching(m, 19, 10) == false);
- *  assert(::IsMatching(m, 20, 10) == true);
- *
- *  std::vector<AnyMatcher<int>> matchers;
- *  matchers.emplace_back(Ge(10));
- *  matchers.emplace_back(Le(50));
- *
- *  for (const auto& m : matchers) assert(::IsMatching(m, 42) == true);
- *
- *  \endcode
- *
- *  \tparam ...Args Arguments type for the given matcher
- */
-template <class... Args>
-class AnyMatcher final {
+namespace details {
+
+template <class AssertPolicy, class... Args>
+class AnyMatcherImpl final {
   /// The virtual interface defining a Matcher
   struct Interface;
 
@@ -323,47 +286,49 @@ class AnyMatcher final {
 
  public:
   /// Default ctor - Bad state/unassigned
-  constexpr AnyMatcher() : m_interface(nullptr){};
+  constexpr AnyMatcherImpl() noexcept : m_interface(nullptr){};
 
   /// Copy ctor: clone the underlying interface
-  constexpr AnyMatcher(const AnyMatcher& other)
+  constexpr AnyMatcherImpl(const AnyMatcherImpl& other)
       : m_interface(other.m_interface->Clone()) {}
 
   /// Move ctor: move the underlying interface
-  constexpr AnyMatcher(AnyMatcher&& other)
+  constexpr AnyMatcherImpl(AnyMatcherImpl&& other) noexcept
       : m_interface(std::move(other.m_interface)) {}
 
   /// Copy assignment: clone the underlying interface
-  constexpr auto operator=(const AnyMatcher& other) -> AnyMatcher& {
+  constexpr auto operator=(const AnyMatcherImpl& other) -> AnyMatcherImpl& {
     m_interface = other.m_interface->Clone();
     return *this;
   }
 
   /// Move assignment: move the underlying interface
-  constexpr auto operator=(AnyMatcher&& other) -> AnyMatcher& {
+  constexpr auto operator=(AnyMatcherImpl&& other) noexcept -> AnyMatcherImpl& {
     m_interface = std::move(other.m_interface);
     return *this;
   }
 
   /// Dtor
-  ~AnyMatcher() noexcept = default;
+  ~AnyMatcherImpl() noexcept = default;
 
   /// Construct AnyMatcher from any ohter matcher like object
-  template <class Matcher,
-            std::enable_if_t<!std::is_same_v<AnyMatcher, std::decay_t<Matcher>>,
-                             bool> = true>
-  constexpr explicit AnyMatcher(Matcher&& m)
+  template <
+      class Matcher,
+      std::enable_if_t<!std::is_same_v<AnyMatcherImpl, std::decay_t<Matcher>>,
+                       bool> = true>
+  constexpr explicit AnyMatcherImpl(Matcher&& m)
       : m_interface(std::make_unique<Wrapper<std::decay_t<Matcher>>>(
             std::forward<Matcher>(m))) {
     MatcherTraits<std::decay_t<Matcher>, Args...>::AssertWhenInvalid();
   }
 
   /// Assign the AnyMatcher to point to an other matcher
-  template <class Matcher,
-            std::enable_if_t<!std::is_same_v<AnyMatcher, std::decay_t<Matcher>>,
-                             bool> = true>
-  constexpr auto operator=(Matcher&& m) -> AnyMatcher& {
-    *this = AnyMatcher(std::forward<Matcher>(m));
+  template <
+      class Matcher,
+      std::enable_if_t<!std::is_same_v<AnyMatcherImpl, std::decay_t<Matcher>>,
+                       bool> = true>
+  constexpr auto operator=(Matcher&& m) -> AnyMatcherImpl& {
+    *this = AnyMatcherImpl(std::forward<Matcher>(m));
     return *this;
   }
 
@@ -375,10 +340,11 @@ class AnyMatcher final {
 
   /// Mandatory IsMatching(Args...) -> bool interface
   ///
-  /// \throw std::runtime_error When the AnyMatcher has not been assigned
+  /// When the AnyMatcher is NOT ASSIGNED (Un-initialized), the behavior depends
+  /// on the AssertPolicy selected
   constexpr auto IsMatching(const Args&... args) const -> bool {
     if (!IsInitialized()) [[unlikely]] {
-      throw std::runtime_error{"AnyMatcher not assigned"};
+      return AssertPolicy::Assert();
     }
 
     return m_interface->IsMatching(args...);
@@ -409,5 +375,76 @@ class AnyMatcher final {
     Matcher m_matcher;
   };
 };
+
+/// Default AssertPolicy used by the AnyMatcher - Throws an exception
+struct SafelyThrows {
+  static auto Assert() -> bool {
+    throw std::runtime_error{
+        "AnyMatcher is empty (i.e. not matcher assigned to it)",
+    };
+  }
+};
+
+/// Unsafe AssertPolicy used by the AnyMatcher - assert() + return false
+struct OnlyAsserts {
+  static auto Assert() noexcept -> bool {
+    assert(false && "AnyMatcher is empty (i.e. not matcher assigned to it)");
+    return false;
+  }
+};
+
+}  // namespace details
+
+/**
+ *  \brief Type erased polymorphic Matcher for a fix set of input arguments
+ *
+ *  This matcher can be assign to ANY matcher M (i.e. type that are 'valid
+ *  matcher' according to the MatcherTraits) at runtime.
+ *
+ *  It can be used when needing to change Matcher at runtime (vs compile time)
+ *  dynamically or store matchers in a container (std::vector<AnyMatcher> for
+ *  example), etc..
+ *
+ *  Example:
+ *  \code{.cpp}
+ *
+ *  // Initialze the AnyMatcher
+ *  AnyMatcher<int, int> m;
+ *
+ *  // Un-initialized by default, calling IsMatching here will THROW
+ *  assert(m.IsInitialized() == false);
+ *
+ *  m = Always<false>();
+ *  assert(m.IsInitialized() == true);
+ *
+ *  assert(::IsMatching(m, 42, 24) == false);
+ *  assert(::IsMatching(m, -42, 0) == false);
+ *
+ *  // Change the matcher dynamically
+ *  m = AllArgs(Eq(10));
+ *  assert(::IsMatching(m, -42, 0) == false);
+ *  assert(::IsMatching(m, 10, 10) == true);
+ *
+ *  m = All(AllArgs(Gt(0)), OnArgs<0>(Eq(20)));
+ *  assert(::IsMatching(m, 20, -10) == false);
+ *  assert(::IsMatching(m, 19, 10) == false);
+ *  assert(::IsMatching(m, 20, 10) == true);
+ *
+ *  std::vector<AnyMatcher<int>> matchers;
+ *  matchers.emplace_back(Ge(10));
+ *  matchers.emplace_back(Le(50));
+ *
+ *  for (const auto& m : matchers) assert(::IsMatching(m, 42) == true);
+ *
+ *  \endcode
+ *
+ *  \tparam AssertPolicy Policy use when the AnyMatcher is not initialized
+ *  \tparam ...Args Arguments type for the given matcher
+ */
+template <class... Args>
+using AnyMatcher = details::AnyMatcherImpl<details::SafelyThrows, Args...>;
+
+template <class... Args>
+using UnsafeAnyMatcher = details::AnyMatcherImpl<details::OnlyAsserts, Args...>;
 
 }  // namespace atb
