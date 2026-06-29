@@ -1,3 +1,4 @@
+#include <array>
 #include <string_view>
 #include <vector>
 using namespace std::literals::string_view_literals;
@@ -457,34 +458,55 @@ TEST(AtbMatchersTest, AnyArgs) {
 }
 
 TEST(AtbMatchersTest, AnyMatcher) {
-  AnyMatcher<int, std::string_view> any_matcher;
+  using AnyMatcherType = AnyMatcher<int, std::string_view>;
+
+  AnyMatcherType any_matcher;
+  EXPECT_FALSE(any_matcher.IsInitialized());
+  EXPECT_THROW(::IsMatching(any_matcher, 1, "Coucou"sv), std::runtime_error);
+
   any_matcher = Always<false>();
+  EXPECT_TRUE(any_matcher.IsInitialized());
   EXPECT_FALSE(::IsMatching(any_matcher, 1, "Coucou"sv));
 
   any_matcher = Always<true>();
+  EXPECT_TRUE(any_matcher.IsInitialized());
   EXPECT_TRUE(::IsMatching(any_matcher, 42, "Chocolatine"sv));
 
   any_matcher = AllOf(OnArgs<0>(Eq(10)), OnArgs<1>(Eq("Toto"sv)));
+  EXPECT_TRUE(any_matcher.IsInitialized());
   EXPECT_TRUE(::IsMatching(any_matcher, 10, "Toto"sv));
   EXPECT_FALSE(::IsMatching(any_matcher, 10, "Tata"sv));
 
+  AnyMatcherType any_matcher_other;
+  EXPECT_FALSE(any_matcher_other.IsInitialized());
+  EXPECT_TRUE(any_matcher.IsInitialized());
+
+  // Copy
+  any_matcher_other = any_matcher;
+  EXPECT_TRUE(any_matcher_other.IsInitialized());
+  EXPECT_TRUE(any_matcher.IsInitialized());
+
+  for (const auto& m : std::array{
+           static_cast<const AnyMatcherType&>(any_matcher),
+           static_cast<const AnyMatcherType&>(any_matcher_other),
+       }) {
+    EXPECT_TRUE(::IsMatching(m, 10, "Toto"sv));
+    EXPECT_FALSE(::IsMatching(m, 10, "Tata"sv));
+  }
+
+  // Move
+  any_matcher_other = std::move(any_matcher);
+  EXPECT_FALSE(any_matcher.IsInitialized());
+  EXPECT_TRUE(any_matcher_other.IsInitialized());
+  EXPECT_TRUE(::IsMatching(any_matcher_other, 10, "Toto"sv));
+  EXPECT_FALSE(::IsMatching(any_matcher_other, 10, "Tata"sv));
+
+  // Showcase container feature of type erased
   std::vector<AnyMatcher<int>> matchers;
   matchers.emplace_back(Always<true>());
   matchers.emplace_back(Ge(20));
   matchers.emplace_back(Lt(100));
-
-  for (const auto& m : matchers) {
-    EXPECT_TRUE(::IsMatching(m, 42));
-  }
-}
-
-TEST(AtbMatchersDeathTest, AnyMatcher) {
-  AnyMatcher<std::string_view> any_matcher;
-
-#if !NDEBUG
-  EXPECT_DEATH(
-      { ::IsMatching(any_matcher, "Coucou"sv); }, "m_interface != nullptr");
-#endif
+  for (const auto& m : matchers) EXPECT_TRUE(::IsMatching(m, 42));
 }
 
 }  // namespace

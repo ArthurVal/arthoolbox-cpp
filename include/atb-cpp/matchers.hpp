@@ -1,12 +1,13 @@
 #pragma once
 
-#include <cmath>
-#include <functional>
-#include <memory>
-#include <tuple>
-#include <utility>
+#include <cmath>       // std::abs()
+#include <functional>  // std::invoke()/is_invokable_r/...
+#include <memory>      // std::unique_ptr
+#include <stdexcept>   // std::runtime_error
+#include <tuple>       // std::make_tuple
+#include <utility>     // std::forward/...
 
-#include "atb-cpp/type_traits.hpp"
+#include "atb-cpp/type_traits.hpp"  // <type_traits>/HasTraits_v
 
 namespace atb {
 
@@ -119,14 +120,13 @@ struct IsMatching_fn {
  *  \brief Checks for a match between ANY matcher \a m and a set of \a args
  *
  * This is a CPO (Customization Point Object) call dispatcher, using traits to
- * choose which matcher's function to call accordingly. Its interface is as
- * follow (from `IsMatching_fn` definition):
+ * choose which matcher's function to call accordingly. Its interface is the
+ * following (from `IsMatching_fn` definition):
  *
  * template<class M, class... Args>
  * auto IsMatching(M&& m, Args&&...args) -> bool;
  *
  * If the matcher defines multiple interfaces, the dispatcher prioritizes them
- *
  * as follow:
  * 1. Method call (i.e. `m.IsMatching(args...)`)
  * 2. FreeFunction using ADL (i.e. `IsMatching(m, args...)`)
@@ -367,12 +367,20 @@ class AnyMatcher final {
     return *this;
   }
 
+  /// Returns true whenever the current matcher has be initialized/assigned
+  /// (i.e. can be called). False otherwise.
+  constexpr auto IsInitialized() const -> bool {
+    return m_interface != nullptr;
+  }
+
   /// Mandatory IsMatching(Args...) -> bool interface
   ///
-  /// \pre AnyMatcher has been assigned to a valid matcher (not default
-  /// constructed)
+  /// \throw std::runtime_error When the AnyMatcher has not been assigned
   constexpr auto IsMatching(const Args&... args) const -> bool {
-    assert(m_interface != nullptr);
+    if (!IsInitialized()) [[unlikely]] {
+      throw std::runtime_error{"AnyMatcher not assigned"};
+    }
+
     return m_interface->IsMatching(args...);
   }
 
