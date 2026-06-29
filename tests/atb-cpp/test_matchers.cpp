@@ -480,8 +480,11 @@ TEST(AtbMatchersTest, AnyMatcher) {
 
 TEST(AtbMatchersDeathTest, AnyMatcher) {
   AnyMatcher<std::string_view> any_matcher;
-  EXPECT_DEBUG_DEATH(
+
+#if !NDEBUG
+  EXPECT_DEATH(
       { ::IsMatching(any_matcher, "Coucou"sv); }, "m_interface != nullptr");
+#endif
 }
 
 }  // namespace
