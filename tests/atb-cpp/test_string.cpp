@@ -24,8 +24,8 @@ TEST(AtbStringTest, StrSize) {
 
 TEST(AtbStringTest, StrCopyUnsafe) {
   std::array<char, 256> buffer;
-  auto begin = std::begin(buffer);
-  auto end = std::end(buffer);
+  const auto begin = std::begin(buffer);
+  const auto end = std::end(buffer);
   std::fill(begin, end, '\0');
 
   auto res = StrCopyUnsafe({}, begin);
@@ -58,8 +58,8 @@ TEST(AtbStringTest, StrCopyUnsafe) {
 
 TEST(AtbStringTest, StrCopy) {
   std::array<char, 20> buffer;
-  auto begin = std::begin(buffer);
-  auto end = std::end(buffer);
+  const auto begin = std::begin(buffer);
+  const auto end = std::end(buffer);
 
   std::fill(begin, end, '\0');
   auto res = StrCopy({}, begin, buffer.size());

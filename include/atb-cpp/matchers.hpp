@@ -342,7 +342,7 @@ class AnyMatcherImpl final {
 
  public:
   /// Default ctor - Bad state/unassigned
-  constexpr AnyMatcherImpl() noexcept : m_interface(nullptr){}
+  constexpr AnyMatcherImpl() noexcept : m_interface(nullptr) {}
 
   /// Copy ctor: clone the underlying interface
   constexpr AnyMatcherImpl(const AnyMatcherImpl& other)
@@ -399,7 +399,7 @@ class AnyMatcherImpl final {
   /// When the AnyMatcher is NOT ASSIGNED (Un-initialized), the behavior depends
   /// on the AssertPolicy selected
   constexpr auto IsMatching(const Args&... args) const -> bool {
-    if (!IsInitialized()) [[unlikely]] {
+    if (!IsInitialized()) {
       return UninitializedPolicy::Assert();
     }
 
