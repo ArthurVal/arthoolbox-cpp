@@ -27,55 +27,64 @@ using IsMatchingFreeFunction =
 }  // namespace details
 
 /**
- *  \brief Matcher traits use to probe any type M for Matcher's interfaces
+ * @brief Matcher traits use to probe any type M for Matcher's interfaces
  *
- *  This traits can be use to check if any type M is defined as a 'Matcher' for
- *  the provided Args... arguments.
+ * This traits can be use to check if any type M is defined as a 'Matcher' for
+ * the provided Args... arguments.
  *
- *  A 'Matcher' is an object m (of type M) that provides at least ONE of the
- *  following interface for the given args... (of type ...Args):
- *  - Method:        `m.IsMatching(args...) -> bool`
- *  - Free function: `IsMatching(m, args...) -> bool`
- *  - Invokable:     `m(args...) -> bool`
+ * A 'Matcher' is an object m (of type M) that provides at least ONE of the
+ * following interface for the given args... (of type ...Args):
+ * - Method:        `m.IsMatching(args...) -> bool`
+ * - Free function: `IsMatching(m, args...) -> bool`
+ * - Invokable:     `m(args...) -> bool`
  *
- *  The traits therefore defines the static method `::IsValidMatcher() -> bool`
- *  that returns TRUE whenever the M/Args provide one of the interface listed
- *  above. False otherwise.
+ * The traits therefore defines the static method `::IsValidMatcher() -> bool`
+ * that returns TRUE whenever the M/Args provide one of the interface listed
+ * above. False otherwise.
  *
- *  Each interface existence can be check individually by the `::HasMethod() ->
- *  bool`, `::HasFreeFunction() -> bool` and `::IsInvokable() -> bool` static
- *  methods.
+ * Each interface existence can be check individually by the `::HasMethod() ->
+ * bool`, `::HasFreeFunction() -> bool` and `::IsInvokable() -> bool` static
+ * methods.
  *
- *  A Static assert helper static method `::AssertWhenInvalid() -> void` is also
- *  provided, in order to `static_assert(IsValidMatcher(), ...)` with a default
- *  message listing the needed requirement on those types.
+ * A Static assert helper static method `::AssertWhenInvalid() -> void` is also
+ * provided, in order to `static_assert(IsValidMatcher(), ...)` with a default
+ * message listing the needed requirement on those types.
  */
 template <class M, class... Args>
 struct MatcherTraits {
-  /// True if M has 'm.IsMatching(args...) -> bool' interface
+  /**
+   * @return True if M has 'm.IsMatching(args...) -> bool' interface
+   */
   static constexpr auto HasMethod() -> bool {
     return HasTrait_v<details::IsMatchingMethod, M, Args...>;
   }
 
-  /// True if the function 'IsMatching(m, args...) -> bool' is defined
+  /**
+   * @return True if the function 'IsMatching(m, args...) -> bool' is defined
+   */
   static constexpr auto HasFreeFunction() -> bool {
     return HasTrait_v<details::IsMatchingFreeFunction, M, Args...>;
   }
 
-  /// True if M is invokable  with 'm(args...) -> bool' interface
+  /**
+   * @return True if M is invokable  with 'm(args...) -> bool' interface
+   */
   static constexpr auto IsInvokable() -> bool {
     return std::is_invocable_r_v<bool, M, Args...>;
   }
 
-  /// True if the M/Args provide at least ONE of the required interface
+  /**
+   * @return True if the M/Args provide at least ONE of the required interface
+   */
   static constexpr auto IsValidMatcher() -> bool {
     return HasMethod() || HasFreeFunction() || IsInvokable();
   }
 
-  /// Static assert when M and Args... are not valid
-  ///
-  /// \note This provides a single and clear message for assertion since Traits
-  ///       is responsible for defining what interfaces we are expecting
+  /**
+   * @brief Static assert when M and Args... are not valid
+   * @note This provides a single and clear message for assertion since Traits
+   *       is responsible for defining what interfaces we are expecting
+   */
   static constexpr auto AssertWhenInvalid() -> void {
     static_assert(
         IsValidMatcher(),
@@ -118,7 +127,7 @@ struct IsMatching_fn {
 }  // namespace atb
 
 /**
- *  \brief Checks for a match between ANY matcher \a m and a set of \a args
+ * @brief Checks for a match between ANY matcher \a m and a set of \a args
  *
  * This is a CPO (Customization Point Object) call dispatcher, using traits to
  * choose which matcher's function to call accordingly. Its interface is the
@@ -135,25 +144,28 @@ struct IsMatching_fn {
  *
  * This asserts (static_assert) when the provided M/Args are not valid matchers.
  *
- *  \param[in] m Matcher object
- *  \param[in] ...args Set of arguments forwarded to the matcher
+ * @param[in] m Matcher object
+ * @param[in] ...args Set of arguments forwarded to the matcher
  *
- *  \return bool True whenever the matcher succesfully matches against the
- *               provided arguments, false otherwise.
+ * @return bool True whenever the matcher succesfully matches against the
+ *              provided arguments, false otherwise.
  */
 inline constexpr atb::details::IsMatching_fn IsMatching{};
 
 namespace atb {
 
 // COMMON MATCHERS //////////////////////////////////////////////////////////
-
-/// Returns Value
+/**
+ * @return Always Values, independently of the inputs
+ */
 template <bool Value>
 constexpr auto Always() noexcept {
   return [](const auto&...) noexcept -> bool { return Value; };
 }
 
-/// Returns true when v == expected
+/**
+ * @return true when v == expected
+ */
 template <class T>
 constexpr auto Eq(T expected) noexcept {
   return [expected = std::move(expected)](const auto& v) -> bool {
@@ -161,7 +173,9 @@ constexpr auto Eq(T expected) noexcept {
   };
 }
 
-/// Returns true when v != expected
+/**
+ * @return true when v != expected
+ */
 template <class T>
 constexpr auto Ne(T expected) noexcept {
   return [expected = std::move(expected)](const auto& v) -> bool {
@@ -169,7 +183,9 @@ constexpr auto Ne(T expected) noexcept {
   };
 }
 
-/// Returns true when v >= expected
+/**
+ * @return true when v >= expected
+ */
 template <class T>
 constexpr auto Ge(T expected) noexcept {
   return [expected = std::move(expected)](const auto& v) -> bool {
@@ -177,7 +193,9 @@ constexpr auto Ge(T expected) noexcept {
   };
 }
 
-/// Returns true when v > expected
+/**
+ * @return true when v > expected
+ */
 template <class T>
 constexpr auto Gt(T expected) noexcept {
   return [expected = std::move(expected)](const auto& v) -> bool {
@@ -185,7 +203,9 @@ constexpr auto Gt(T expected) noexcept {
   };
 }
 
-/// Returns true when v <= expected
+/**
+ * @return true when v <= expected
+ */
 template <class T>
 constexpr auto Le(T expected) noexcept {
   return [expected = std::move(expected)](const auto& v) -> bool {
@@ -193,7 +213,9 @@ constexpr auto Le(T expected) noexcept {
   };
 }
 
-/// Returns true when v < expected
+/**
+ * @return true when v < expected
+ */
 template <class T>
 constexpr auto Lt(T expected) noexcept {
   return [expected = std::move(expected)](const auto& v) -> bool {
@@ -201,7 +223,9 @@ constexpr auto Lt(T expected) noexcept {
   };
 }
 
-// Returns true when |v - expected| <= abs_error
+/**
+ * @return true when |v - expected| <= abs_error
+ */
 template <class T, class ErrorType = double>
 constexpr auto Near(T expected, ErrorType abs_error = 1e-6) noexcept {
   return [expected = std::move(expected),
@@ -212,14 +236,19 @@ constexpr auto Near(T expected, ErrorType abs_error = 1e-6) noexcept {
 
 // COMPOSITE MATCHERS ///////////////////////////////////////////////////////
 
-/// Returns the negation of m(v)
+/**
+ * @return The negation of m(v...)
+ */
 template <class Matcher>
 constexpr auto Not(Matcher m) noexcept {
-  return
-      [m = std::move(m)](const auto& v) -> bool { return !::IsMatching(m, v); };
+  return [m = std::move(m)](const auto&... v) -> bool {
+    return !::IsMatching(m, v...);
+  };
 }
 
-/// Returns true if ALL matchers returns true
+/**
+ * @return true if ALL matchers returns true
+ */
 template <class... Matchers>
 constexpr auto AllOf(Matchers... m) noexcept {
   return
@@ -230,7 +259,9 @@ constexpr auto AllOf(Matchers... m) noexcept {
       };
 }
 
-/// Returns true if ONE OF the matchers returns true
+/**
+ * @return true if ONE OF the matchers returns true
+ */
 template <class... Matchers>
 constexpr auto AnyOf(Matchers... m) noexcept {
   return
@@ -243,7 +274,9 @@ constexpr auto AnyOf(Matchers... m) noexcept {
 
 // FILTER ARGS COMPOSITE MATCHERS //////////////////////////////////////////////
 
-/// Returns m(v...) by selecting the Ith argument(s) v from a pack of arguments
+/**
+ * @return m(v[i]...) by selecting the Ith argument(s) from v...
+ */
 template <std::size_t... I, class Matcher>
 constexpr auto OnArgs(Matcher m) noexcept {
   return [m = std::move(m)](const auto&... v) -> bool {
@@ -252,7 +285,9 @@ constexpr auto OnArgs(Matcher m) noexcept {
   };
 }
 
-/// Returns true if m returns true for ALL the arguments individually
+/**
+ * @return true if m returns true for ALL the arguments individually
+ */
 template <class Matcher>
 constexpr auto AllArgs(Matcher m) noexcept {
   return [m = std::move(m)](const auto&... v) -> bool {
@@ -260,7 +295,9 @@ constexpr auto AllArgs(Matcher m) noexcept {
   };
 }
 
-/// Returns true if m returns true for at least ONE of the arguments
+/**
+ * @return true if m returns true for at least ONE of the arguments
+ */
 template <class Matcher>
 constexpr auto AnyArgs(Matcher m) noexcept {
   return [m = std::move(m)](const auto&... v) -> bool {
@@ -273,60 +310,60 @@ constexpr auto AnyArgs(Matcher m) noexcept {
 namespace details {
 
 /**
- *  \brief Type erased polymorphic Matcher for a fix set of input arguments
+ * @brief Type erased polymorphic Matcher for a fix set of input arguments
  *
- *  This matcher can be assign to ANY matcher M (i.e. type that are 'valid
- *  matcher' according to the MatcherTraits) at runtime.
+ * This matcher can be assign to ANY matcher M (i.e. type that are 'valid
+ * matcher' according to the MatcherTraits) at runtime.
  *
- *  It can be used when needing to change Matcher at runtime (vs compile time)
- *  dynamically or store matchers in a container (std::vector<AnyMatcher> for
- *  example), etc..
+ * It can be used when needing to change Matcher at runtime (vs compile time)
+ * dynamically or store matchers in a container (std::vector<AnyMatcher> for
+ * example), etc..
  *
- *  Example:
+ * Example:
  *
- *  \code{.cpp}
+ * @code{.cpp}
  *
- *  // Initialze the AnyMatcher
- *  AnyMatcher<int, int> m;
+ * // Initialze the AnyMatcher
+ * AnyMatcher<int, int> m;
  *
- *  // Un-initialized by default, calling IsMatching here will THROW
- *  assert(m.IsInitialized() == false);
+ * // Un-initialized by default, calling IsMatching here will THROW
+ * assert(m.IsInitialized() == false);
  *
- *  m = Always<false>();
- *  assert(m.IsInitialized() == true);
+ * m = Always<false>();
+ * assert(m.IsInitialized() == true);
  *
- *  assert(::IsMatching(m, 42, 24) == false);
- *  assert(::IsMatching(m, -42, 0) == false);
+ * assert(::IsMatching(m, 42, 24) == false);
+ * assert(::IsMatching(m, -42, 0) == false);
  *
- *  // Change the matcher dynamically
- *  m = AllArgs(Eq(10));
- *  assert(::IsMatching(m, -42, 0) == false);
- *  assert(::IsMatching(m, 10, 10) == true);
+ * // Change the matcher dynamically
+ * m = AllArgs(Eq(10));
+ * assert(::IsMatching(m, -42, 0) == false);
+ * assert(::IsMatching(m, 10, 10) == true);
  *
- *  m = All(AllArgs(Gt(0)), OnArgs<0>(Eq(20)));
- *  assert(::IsMatching(m, 20, -10) == false);
- *  assert(::IsMatching(m, 19, 10) == false);
- *  assert(::IsMatching(m, 20, 10) == true);
+ * m = All(AllArgs(Gt(0)), OnArgs<0>(Eq(20)));
+ * assert(::IsMatching(m, 20, -10) == false);
+ * assert(::IsMatching(m, 19, 10) == false);
+ * assert(::IsMatching(m, 20, 10) == true);
  *
- *  std::vector<AnyMatcher<int>> matchers;
- *  matchers.emplace_back(Ge(10));
- *  matchers.emplace_back(Le(50));
+ * std::vector<AnyMatcher<int>> matchers;
+ * matchers.emplace_back(Ge(10));
+ * matchers.emplace_back(Le(50));
  *
- *  for (const auto& m : matchers) assert(::IsMatching(m, 42) == true);
+ * for (const auto& m : matchers) assert(::IsMatching(m, 42) == true);
  *
- *  \endcode
+ * @endcode
  *
- *  By default, this type erased class is default constructible. In this case,
- *  it doesn't own any matcher and it is considered 'uninitialized'.
- *  When calling `IsMatching(...)` while the matcher is uninitialized, it
- *  behaves based on the UninitializedPolicy provided.
+ * By default, this type erased class is default constructible. In this case,
+ * it doesn't own any matcher and it is considered 'uninitialized'.
+ * When calling `IsMatching(...)` while the matcher is uninitialized, it
+ * behaves based on the UninitializedPolicy provided.
  *
- *  This policy is expected to have a `::Assert(void) -> bool` interface that
- *  dictates what to do whenever the internal matcher is NULL (return false,
- *  throw an exception, assert, ...).
+ * This policy is expected to have a `::Assert(void) -> bool` interface that
+ * dictates what to do whenever the internal matcher is NULL (return false,
+ * throw an exception, assert, ...).
  *
- *  \tparam UninitializedPolicy Policy use when the AnyMatcher is uninitialized
- *  \tparam ...Args Arguments type for the given matcher
+ * @tparam UninitializedPolicy Policy use when the AnyMatcher is uninitialized
+ * @tparam ...Args Arguments type for the given matcher
  */
 template <class UninitializedPolicy, class... Args>
 class AnyMatcherImpl final {
@@ -341,33 +378,50 @@ class AnyMatcherImpl final {
   std::unique_ptr<Interface> m_interface;
 
  public:
-  /// Default ctor - Bad state/unassigned
+  /**
+   * @brief Default ctor (not initialized)
+   */
   constexpr AnyMatcherImpl() noexcept : m_interface(nullptr) {}
 
-  /// Copy ctor: clone the underlying interface
+  /**
+   * @brief Copy ctor: clone the underlying interface
+   */
   constexpr AnyMatcherImpl(const AnyMatcherImpl& other)
       : m_interface(other.m_interface->Clone()) {}
 
-  /// Move ctor: move the underlying interface
+  /**
+   * @brief Move ctor: move the underlying interface
+   */
   constexpr AnyMatcherImpl(AnyMatcherImpl&& other) noexcept
       : m_interface(std::move(other.m_interface)) {}
 
-  /// Copy assignment: clone the underlying interface
+  /**
+   * @brief Copy assignment: clone the underlying interface
+   */
   constexpr auto operator=(const AnyMatcherImpl& other) -> AnyMatcherImpl& {
     m_interface = other.m_interface->Clone();
     return *this;
   }
 
-  /// Move assignment: move the underlying interface
+  /**
+   * @brief Move assignment: move the underlying interface
+   */
   constexpr auto operator=(AnyMatcherImpl&& other) noexcept -> AnyMatcherImpl& {
     m_interface = std::move(other.m_interface);
     return *this;
   }
 
-  /// Dtor
+  /**
+   * @brief Dtor
+   */
   ~AnyMatcherImpl() noexcept = default;
 
-  /// Construct AnyMatcher from any ohter matcher like object
+  /**
+   * @brief Construct AnyMatcher from any other matcher like object
+   *
+   * @param[in] m Any matcher defining a 'matcher' interface based on the
+   *              MatcherTraits
+   */
   template <
       class Matcher,
       std::enable_if_t<!std::is_same_v<AnyMatcherImpl, std::decay_t<Matcher>>,
@@ -378,7 +432,12 @@ class AnyMatcherImpl final {
     MatcherTraits<std::decay_t<Matcher>, Args...>::AssertWhenInvalid();
   }
 
-  /// Assign the AnyMatcher to point to an other matcher
+  /**
+   * @brief Re-Assign the AnyMatcher to point to an other matcher
+   *
+   * @param[in] m Any matcher defining a 'matcher' interface based on the
+   *              MatcherTraits
+   */
   template <
       class Matcher,
       std::enable_if_t<!std::is_same_v<AnyMatcherImpl, std::decay_t<Matcher>>,
@@ -388,16 +447,21 @@ class AnyMatcherImpl final {
     return *this;
   }
 
-  /// Returns true whenever the current matcher has be initialized/assigned
-  /// (i.e. can be called). False otherwise.
+  /**
+   * @return true whenever the current matcher has be initialized/assigned
+   *         (i.e. IsMatching can be called safely). False otherwise.
+   */
   constexpr auto IsInitialized() const -> bool {
     return m_interface != nullptr;
   }
 
-  /// Mandatory IsMatching(Args...) -> bool interface
-  ///
-  /// When the AnyMatcher is NOT ASSIGNED (Un-initialized), the behavior depends
-  /// on the AssertPolicy selected
+  /**
+   * @brief Mandatory matcher `IsMatching(Args...) -> bool` interface.
+   *
+   * @return true whenever the current stored matcher matches, false otherwise.
+   *         When the AnyMatcher is NOT ASSIGNED (uninitialized), the behavior
+   *         depends on the AssertPolicy selected.
+   */
   constexpr auto IsMatching(const Args&... args) const -> bool {
     if (!IsInitialized()) {
       return UninitializedPolicy::Assert();
@@ -432,7 +496,9 @@ class AnyMatcherImpl final {
   };
 };
 
-/// Default UninitializedPolicy used by the AnyMatcher - Throws an exception
+/**
+ * @brief UninitializedPolicy that throws an exception
+ */
 struct Throws {
   static auto Assert() -> bool {
     throw std::runtime_error{
@@ -441,7 +507,9 @@ struct Throws {
   }
 };
 
-/// Unsafe UninitializedPolicy used by the AnyMatcher - assert() + return false
+/**
+ * @brief UninitializedPolicy that assert() and ALWAYS return false
+ */
 struct Asserts {
   static auto Assert() noexcept -> bool {
     assert(false && "AnyMatcher is empty (i.e. not matcher assigned to it)");
@@ -452,23 +520,23 @@ struct Asserts {
 }  // namespace details
 
 /**
- *  \brief Default AnyMatcher implementation that THROWS when uninitialized
+ * @brief Default AnyMatcher implementation that THROWS when uninitialized
  *
- *  See details::AnyMatcherImpl for more details.
+ * See details::AnyMatcherImpl for more details.
  *
- *  \tparam ...Args Arguments type for the given matcher
+ * @tparam ...Args Arguments type for the given matcher
  */
 template <class... Args>
 using AnyMatcher = details::AnyMatcherImpl<details::Throws, Args...>;
 
 /**
- *  \brief Unsafe AnyMatcher implementation that assert() when uninitialized
+ * @brief Unsafe AnyMatcher implementation that assert() when uninitialized
  *
- *  See details::AnyMatcherImpl for more details.
+ * See details::AnyMatcherImpl for more details.
  *
- *  \note If compiled in release (i.e. with NDEBUG) it always returns false
+ * @note If compiled in release (i.e. with NDEBUG) it always returns false
  *
- *  \tparam ...Args Arguments type for the given matcher
+ * @tparam ...Args Arguments type for the given matcher
  */
 template <class... Args>
 using UnsafeAnyMatcher = details::AnyMatcherImpl<details::Asserts, Args...>;
