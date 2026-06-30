@@ -1,9 +1,10 @@
 #pragma once
 
 #include <algorithm>  // std::copy_n
-#include <cassert>    // assert
-#include <cstdint>    // std::uintmax_t
+#include <cstddef>    // std::size_t
 #include <initializer_list>
+#include <limits>  // std::numeric_limits
+#include <optional>
 #include <string>
 #include <string_view>
 
@@ -14,8 +15,8 @@ namespace atb {
  *  @param[in] strings List of strings we wish compute the size of
  */
 constexpr auto StrSize(std::initializer_list<std::string_view> strings) noexcept
-    -> std::uintmax_t {
-  std::uintmax_t size = 0;
+    -> std::size_t {
+  std::size_t size = 0;
   for (auto str : strings) size += str.size();
   return size;
 }
@@ -69,50 +70,61 @@ constexpr auto StrCopyUnsafe(std::initializer_list<std::string_view> strings,
 }
 
 /**
- *  @brief Append the list of strings into \a d_str by doing only one resize.
+ *  @brief Append the list of \a strings into \a d_str by doing only one resize.
  *
  *  @param[in] strings List of strings we wish to copy
- *  @param[out] d_str Destination string we wish to append into
+ *  @param[inout] d_str Destination string we wish to append into
  *
- *  @pre The number of bytes contained within strings fit into out
- *       (StrSize(strings) <= out.max_size())
- *
- *  @return The number of bytes added to str when successfull
+ *  @return The number of bytes added to str when successfull. Otherwise
+ *  std::nullopt if the operation would overflows.
  *
  *  @note Optimize the 'resize()' operation by doing it once instead of doing
  *        it for each new '.append()' or 'operator+=()' call at the cost of
  *        iterating over the strings 2 times
  */
 inline auto StrAppend(std::initializer_list<std::string_view> strings,
-                      std::string& d_str) -> std::size_t {
-  const std::uintmax_t old_size = d_str.size();
-  const std::uintmax_t added = StrSize(strings);
-  const std::uintmax_t new_size = old_size + added;
+                      std::string& d_str) -> std::optional<std::size_t> {
+  const std::size_t old_size = d_str.size();
+  const std::size_t added = StrSize(strings);
 
-  assert(new_size <= d_str.max_size());
+  std::optional<std::size_t> res = std::nullopt;
 
-  // WARNING: bad_alloc
+  // std::size_t overflows
+  if (old_size > std::numeric_limits<std::size_t>::max() - added) {
+    return res;
+  }
+
+  const std::size_t new_size = (old_size + added);
+
+  // std::string mem overflows
+  if (new_size > d_str.max_size()) {
+    return res;
+  }
+
   d_str.resize(new_size);
-
   StrCopyUnsafe(std::move(strings), std::addressof(d_str[old_size]));
-  return static_cast<std::size_t>(added);
+
+  res = added;
+  return res;
 }
 
 /**
- *  @return std::string Containing the concatenation of all strings
- *
- *  @pre The number of bytes contained within strings fit into out
- *       ((StrSize(strings) + out.size()) <= out.max_size()).
+ *  @return std::optional<std::string> Containing the concatenation of all
+ *          strings on sucess. std::nullopt when the concatenation of all
+ *          strings would overflows.
  *
  *  @note Optimize the 'resize()' operation by doing it once instead of doing
  *        it for each new '.append()' or 'operator+=()' call at the cost of
  *        iterating over the strings 2 times
  */
 inline auto StrCat(std::initializer_list<std::string_view> strings)
-    -> std::string {
+    -> std::optional<std::string> {
+  std::optional<std::string> res = std::nullopt;
+
   std::string str;
-  StrAppend(strings, str);
-  return str;
+  if (StrAppend(strings, str)) res = std::move(str);
+
+  return res;
 }
 
 }  // namespace atb
