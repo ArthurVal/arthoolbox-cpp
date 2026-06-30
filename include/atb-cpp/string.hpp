@@ -50,6 +50,16 @@ constexpr auto StrCopy(std::initializer_list<std::string_view> strings,
   return d_first;
 }
 
+/**
+ *  @brief Copy the range of \a strings into \a d_first
+ *
+ *  Same as StrCopy but unsafe (no checks for input buffer range).
+ *
+ *  @param[in] strings List of strings we wish to copy
+ *  @param[in] d_first The destination char buffer
+
+ *  @return One past the last byte written into
+ */
 constexpr auto StrCopyUnsafe(std::initializer_list<std::string_view> strings,
                              char* d_first) noexcept -> char* {
   for (auto str : strings) {
