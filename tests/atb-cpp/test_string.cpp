@@ -125,6 +125,26 @@ TEST(AtbStringTest, StrAppend) {
   added = StrAppend({sep, chocolatine}, str);
   EXPECT_EQ(added.value(), sep.size() + chocolatine.size());
   EXPECT_EQ(str, "foo Chocolatine"sv);
+
+  // Append itself
+  added = StrAppend({sep, str}, str);
+  EXPECT_EQ(added.value(), foo.size() + (2 * sep.size()) + chocolatine.size());
+  EXPECT_EQ(str, "foo Chocolatine foo Chocolatine"sv);
+}
+
+TEST(AtbStringTest, StrAppendUnsafe) {
+  std::string str;
+
+  auto added = StrAppendUnsafe({}, str);
+  EXPECT_EQ(added.value(), 0);
+
+  added = StrAppendUnsafe({foo}, str);
+  EXPECT_EQ(added.value(), foo.size());
+  EXPECT_EQ(str, foo);
+
+  added = StrAppendUnsafe({sep, chocolatine}, str);
+  EXPECT_EQ(added.value(), sep.size() + chocolatine.size());
+  EXPECT_EQ(str, "foo Chocolatine"sv);
 }
 
 TEST(AtbStringTest, StrCat) {
