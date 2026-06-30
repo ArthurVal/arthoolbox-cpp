@@ -117,6 +117,7 @@ TEST(AtbStringTest, StrAppend) {
 
   auto added = StrAppend({}, str);
   EXPECT_EQ(added.value(), 0);
+  EXPECT_EQ(str, ""sv);
 
   added = StrAppend({foo}, str);
   EXPECT_EQ(added.value(), foo.size());
@@ -137,6 +138,7 @@ TEST(AtbStringTest, StrAppendUnsafe) {
 
   auto added = StrAppendUnsafe({}, str);
   EXPECT_EQ(added.value(), 0);
+  EXPECT_EQ(str, ""sv);
 
   added = StrAppendUnsafe({foo}, str);
   EXPECT_EQ(added.value(), foo.size());
