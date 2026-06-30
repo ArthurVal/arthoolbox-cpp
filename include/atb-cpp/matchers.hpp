@@ -155,6 +155,7 @@ inline constexpr atb::details::IsMatching_fn IsMatching{};
 namespace atb {
 
 // COMMON MATCHERS //////////////////////////////////////////////////////////
+
 /**
  * @return Always Values, independently of the inputs
  */
