@@ -24,10 +24,10 @@ TEST(AtbStringTest, StrSize) {
 
 TEST(AtbStringTest, StrCopyUnsafe) {
   std::array<char, 256> buffer;
-  const auto begin = std::begin(buffer);
-  const auto end = std::end(buffer);
-  std::fill(begin, end, '\0');
+  const auto begin = buffer.data();
+  const auto end = begin + buffer.size();
 
+  std::fill(begin, end, '\0');
   auto res = StrCopyUnsafe({}, begin);
   EXPECT_EQ(res, begin);
 
@@ -35,6 +35,7 @@ TEST(AtbStringTest, StrCopyUnsafe) {
   EXPECT_EQ(res, std::next(begin, coucou.size()));
   EXPECT_EQ(coucou, std::string_view(begin, coucou.size()));
 
+  std::fill(begin, end, '\0');
   res = StrCopyUnsafe({chocolatine}, begin);
   EXPECT_EQ(res, std::next(begin, chocolatine.size()));
   EXPECT_EQ(chocolatine, std::string_view(begin, chocolatine.size()));
@@ -45,9 +46,8 @@ TEST(AtbStringTest, StrCopyUnsafe) {
   EXPECT_EQ("ChocolatineCoucou",
             std::string_view(begin, chocolatine.size() + coucou.size()));
 
-  std::fill(begin, end, '\0');
-
   // Multiple strings
+  std::fill(begin, end, '\0');
   res = StrCopyUnsafe({coucou, sep, chocolatine}, begin);
   EXPECT_EQ(res,
             std::next(begin, coucou.size() + sep.size() + chocolatine.size()));
@@ -58,8 +58,8 @@ TEST(AtbStringTest, StrCopyUnsafe) {
 
 TEST(AtbStringTest, StrCopy) {
   std::array<char, 20> buffer;
-  const auto begin = std::begin(buffer);
-  const auto end = std::end(buffer);
+  const auto begin = buffer.data();
+  const auto end = begin + buffer.size();
 
   std::fill(begin, end, '\0');
   auto res = StrCopy({}, begin, buffer.size());
