@@ -127,6 +127,12 @@ TEST(AtbStringTest, StrAppend) {
   EXPECT_EQ(str, "foo Chocolatine"sv);
 }
 
+TEST(AtbStringTest, StrCat) {
+  EXPECT_EQ(StrCat({}).value(), "");
+  EXPECT_EQ(StrCat({foo, sep, chocolatine, sep, coucou}).value(),
+            "foo Chocolatine Coucou");
+}
+
 }  // namespace
 
 }  // namespace atb
