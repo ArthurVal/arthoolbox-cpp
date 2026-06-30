@@ -12,16 +12,11 @@ target_link_libraries(tests-${PROJECT_NAME}
   PRIVATE GTest::gmock_main
 )
 
+utils_append_default_warnings_to(tests-${PROJECT_NAME}-WARNINGS)
+
 target_compile_options(tests-${PROJECT_NAME}
   PRIVATE
-  -Wall
-  -Wextra
-  -Wpedantic
-  -Wshadow
-  -Wdouble-promotion
-  -Wundef
-  -Wconversion
-  # -Werror
+  ${tests-${PROJECT_NAME}-WARNINGS}
 )
 
 gtest_discover_tests(tests-${PROJECT_NAME})

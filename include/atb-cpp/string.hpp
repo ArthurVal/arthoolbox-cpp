@@ -73,8 +73,8 @@ constexpr auto StrCopyUnsafe(std::initializer_list<std::string_view> strings,
  *        it for each new '.append()' or 'operator+=()' call at the cost of
  *        iterating over the strings 2 times
  */
-constexpr auto StrAppend(std::initializer_list<std::string_view> strings,
-                         std::string& d_str) -> std::size_t {
+inline auto StrAppend(std::initializer_list<std::string_view> strings,
+                      std::string& d_str) -> std::size_t {
   const std::uintmax_t old_size = d_str.size();
   const std::uintmax_t added = StrSize(strings);
   const std::uintmax_t new_size = old_size + added;

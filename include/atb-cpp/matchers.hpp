@@ -342,7 +342,7 @@ class AnyMatcherImpl final {
 
  public:
   /// Default ctor - Bad state/unassigned
-  constexpr AnyMatcherImpl() noexcept : m_interface(nullptr){};
+  constexpr AnyMatcherImpl() noexcept : m_interface(nullptr){}
 
   /// Copy ctor: clone the underlying interface
   constexpr AnyMatcherImpl(const AnyMatcherImpl& other)
