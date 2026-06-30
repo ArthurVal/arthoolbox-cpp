@@ -12,7 +12,9 @@ target_link_libraries(tests-${PROJECT_NAME}
   PRIVATE GTest::gmock_main
 )
 
-utils_append_default_warnings_to(tests-${PROJECT_NAME}-WARNINGS)
+utils_append_default_warnings_to(tests-${PROJECT_NAME}-WARNINGS
+  WARNINGS_AS_ERRORS
+)
 
 target_compile_options(tests-${PROJECT_NAME}
   PRIVATE
