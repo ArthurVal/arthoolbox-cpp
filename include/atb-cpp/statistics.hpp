@@ -9,13 +9,13 @@
 namespace atb {
 
 /**
- *  \brief Update the provided arithmetic mean by adding a new sample xn
+ * @brief Update the provided arithmetic mean by adding a new sample xn
  *
- *  \param[in] mean The previous mean computed for n-1
- *  \param[in] x The new sample Xn
- *  \param[in] n The sample's number
+ * @param[in] mean The previous mean computed for n-1
+ * @param[in] x The new sample Xn
+ * @param[in] n The sample's number
  *
- *  \return M The new mean updated
+ * @return M The new mean updated
  */
 template <class M, class T>
 constexpr auto UpdateMean(M mean, const T &x, std::size_t n) -> M {
@@ -23,20 +23,20 @@ constexpr auto UpdateMean(M mean, const T &x, std::size_t n) -> M {
 }
 
 /**
- *  \brief Update the provided mean and variance by adding a new sample xn,
- *  following the Welford's online algorithm
+ * @brief Update the provided mean and variance by adding a new sample xn,
+ *        following the Welford's online algorithm
  *
- *  \warning Only start to update the sampled variance's value when n > 0
+ * @warning Only start to update the sampled variance's value when n > 0
  *
- *  \note See https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance
+ * @note See https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance
  *
- *  \param[in] var The previous variance computed for n-1
- *  \param[in] mean The previous mean computed for n-1
- *  \param[in] x The new sample Xn
- *  \param[in] n The sample's number
+ * @param[in] var The previous variance computed for n-1
+ * @param[in] mean The previous mean computed for n-1
+ * @param[in] x The new sample Xn
+ * @param[in] n The sample's number
  *
- *  \return std::pair<V, M> A pair containing the updated variance and mean for
- *          step N
+ * @return std::pair<V, M> A pair containing the updated variance and mean for
+ *         step N
  */
 template <class V, class M, class T>
 constexpr auto UpdateVar(V var, M mean, const T &x,
@@ -52,20 +52,20 @@ constexpr auto UpdateVar(V var, M mean, const T &x,
 }
 
 /**
- *  \brief Update the provided mean and sampled variance by adding a new sample
- *  xn, following the Welford's online algorithm
+ * @brief Update the provided mean and sampled variance by adding a new sample
+ *        xn, following the Welford's online algorithm
  *
- *  \warning Only start to update the sampled variance's value when n > 1
+ * @warning Only start to update the sampled variance's value when n > 1
  *
- *  \note See https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance
+ * @note See https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance
  *
- *  \param[in] svar The previous sampled variance computed for n-1
- *  \param[in] mean The previous mean computed for n-1
- *  \param[in] x The new sample Xn
- *  \param[in] n The sample's number
+ * @param[in] svar The previous sampled variance computed for n-1
+ * @param[in] mean The previous mean computed for n-1
+ * @param[in] x The new sample Xn
+ * @param[in] n The sample's number
  *
- *  \return std::pair<V, M> A pair containing the updated sampled variance and
- *          mean for step N
+ * @return std::pair<V, M> A pair containing the updated sampled variance and
+ *         mean for step N
  */
 template <class V, class M, class T>
 constexpr auto UpdateSVar(V svar, M mean, const T &x,
@@ -81,25 +81,25 @@ constexpr auto UpdateSVar(V svar, M mean, const T &x,
 }
 
 /**
- *  \brief Update the provided mean and sum of square by adding a new sample xn,
- *  following the Welford's online algorithm
+ * @brief Update the provided mean and sum of square by adding a new sample xn,
+ *        following the Welford's online algorithm
  *
- *  The sum of squares is an alternative value that may be computed in order to
- *  obtain the variance or sampled variance by simply dividing it to n (n-1
- *  respectively)
+ * The sum of squares is an alternative value that may be computed in order to
+ * obtain the variance or sampled variance by simply dividing it to n (n-1
+ * respectively)
  *
- *  It has the advantage of not suffering from numerical instability over the
- *  standard recurrent function of the variances.
+ * It has the advantage of not suffering from numerical instability over the
+ * standard recurrent function of the variances.
  *
- *  \note See https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance
+ * @note See https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance
  *
- *  \param[in] sum The previous sum of square computed for n-1
- *  \param[in] mean The previous mean computed for n-1
- *  \param[in] x The new sample Xn
- *  \param[in] n The sample's number
+ * @param[in] sum The previous sum of square computed for n-1
+ * @param[in] mean The previous mean computed for n-1
+ * @param[in] x The new sample Xn
+ * @param[in] n The sample's number
  *
- *  \return std::pair<V, M> A pair containing the updated sum of square and
- *          mean for step N
+ * @return std::pair<V, M> A pair containing the updated sum of square and
+ *         mean for step N
  */
 template <class V, class M, class T>
 constexpr auto UpdateSumSquare(V sum, M mean, const T &x,
@@ -113,8 +113,8 @@ constexpr auto UpdateSumSquare(V sum, M mean, const T &x,
 }
 
 /**
- *  \brief Build up simple online statistics (mean/variance) using Welford's
- *         online algorithm
+ * @brief Build up simple online statistics (mean/variance) using Welford's
+ *        online algorithm
  */
 template <class _ElementType, class _Mean = double, class _Var = double>
 struct OnlineStats {
@@ -131,9 +131,9 @@ struct OnlineStats {
   constexpr OnlineStats() = default;
 
   /**
-   *  \brief Construct a Stats by initializing it with a range of values
+   * @brief Construct a Stats by initializing it with a range of values
    *
-   *  \param[in] [first, last) A range of values
+   * @param[in] [first, last) A range of values
    */
   template <
       class InputIt,
@@ -148,31 +148,31 @@ struct OnlineStats {
   }
 
   /**
-   *  \brief Construct a Stats by initializing it with a range of values
+   * @brief Construct a Stats by initializing it with a range of values
    *
-   *  \param[in] values A range of values
+   * @param[in] values A range of values
    */
   constexpr explicit OnlineStats(std::initializer_list<element_t> values)
       : OnlineStats(std::begin(values), std::end(values)) {}
 
   /**
-   *  \return std::size_t The current number of sample
+   * @return std::size_t The current number of sample
    */
   constexpr auto N() const noexcept -> std::size_t { return m_n; }
 
   /**
-   *  \return mean_t The current arithmetic mean computed for N() samples
+   * @return mean_t The current arithmetic mean computed for N() samples
    */
   constexpr auto Mean() const noexcept -> mean_t { return m_mean; }
 
   /**
-   *  \return variance_t The current sum of square computed for N() samples
+   * @return variance_t The current sum of square computed for N() samples
    */
   constexpr auto Sum() const noexcept -> variance_t { return m_sum; }
 
   /**
-   *  \return std::optional<variance_t> The current variance computed for N()
-   *          samples IF N() > 0, std::nullopt otherwise.
+   * @return std::optional<variance_t> The current variance computed for N()
+   *         samples IF N() > 0, std::nullopt otherwise.
    */
   constexpr auto Var() const noexcept -> std::optional<variance_t> {
     std::optional<variance_t> var = std::nullopt;
@@ -181,8 +181,8 @@ struct OnlineStats {
   }
 
   /**
-   *  \return std::optional<variance_t> The current sampled variance computed
-   *          for N() samples IF N() > 1, std::nullopt otherwise.
+   * @return std::optional<variance_t> The current sampled variance computed
+   *         for N() samples IF N() > 1, std::nullopt otherwise.
    */
   constexpr auto SVar() const noexcept -> std::optional<variance_t> {
     std::optional<variance_t> svar = std::nullopt;
@@ -191,11 +191,11 @@ struct OnlineStats {
   }
 
   /**
-   *  \brief Update the stats using a new sample Xn
+   * @brief Update the stats using a new sample Xn
    *
-   *  \param[in] x A new sample Xn
+   * @param[in] x A new sample Xn
    *
-   *  \return True on successfull update, false otherwise (N overflows)
+   * @return True on successfull update, false otherwise (N overflows)
    */
   constexpr auto Update(const element_t &x) -> bool {
     if (m_n == std::numeric_limits<std::size_t>::max()) return false;
@@ -208,7 +208,7 @@ struct OnlineStats {
   }
 
   /**
-   *  \brief Reset the current stats to 0
+   * @brief Reset the current stats to 0
    */
   constexpr auto Reset() -> void {
     m_mean = 0;
