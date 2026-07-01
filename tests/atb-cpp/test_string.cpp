@@ -350,12 +350,19 @@ TEST(AtbStringTest, StrSwitch) {
 
   EXPECT_EQ(3, StrSwitch<int>("Coucou")
                    .Case("foo", 1)
+                   .Case(chocolatine, 2)
+                   .Case(coucou, 3)
+                   .Case(StrContains("c"), 4)
+                   .Default(-1));
+
+  EXPECT_EQ(3, StrSwitch<int>("Coucou")
+                   .Case("foo", 1)
                    .Case("Coucou ", 2)
                    .Case(StrStartsWith("Cou"), 3)
                    .Case(StrContains("c"), 4)
                    .Default(-1));
 
-  EXPECT_EQ(4, StrSwitch<int>("Coucou")
+  EXPECT_EQ(4, StrSwitch<int>(coucou)
                    .Case("foo", 1)
                    .Case("Coucou ", 2)
                    .Case(StrStartsWith("Cou "), 3)
@@ -370,7 +377,7 @@ TEST(AtbStringTest, StrSwitch) {
                    .Case(AllOf(StrStartsWith("Co"), StrEndsWith("ou")), 5)
                    .Default(-1));
 
-  EXPECT_EQ(-1, StrSwitch<int>("Coucou")
+  EXPECT_EQ(-1, StrSwitch<int>(chocolatine)
                     .Case("foo", 1)
                     .Case("Coucou ", 2)
                     .Case(StrStartsWith("Cou "), 3)
