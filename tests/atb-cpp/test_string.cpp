@@ -2,6 +2,7 @@
 #include <array>
 #include <cstddef>
 #include <iterator>
+#include <limits>
 
 #include "atb-cpp/string.hpp"
 #include "gtest/gtest.h"
@@ -153,6 +154,237 @@ TEST(AtbStringTest, StrCat) {
   EXPECT_EQ(StrCat({}).value(), ""sv);
   EXPECT_EQ(StrCat({foo, sep, chocolatine, sep, coucou}).value(),
             "foo Chocolatine Coucou"sv);
+}
+
+TEST(AtbStringTest, StrStartsWith) {
+  // Empty inputs
+  EXPECT_TRUE(::IsMatching(StrStartsWith(""), ""));
+  EXPECT_TRUE(::IsMatching(StrStartsWith(""), coucou));
+  EXPECT_FALSE(::IsMatching(StrStartsWith(coucou), ""));
+
+  // Same input
+  EXPECT_TRUE(::IsMatching(StrStartsWith(coucou), coucou));
+
+  // Nominal
+  constexpr auto starts_with_foo = StrStartsWith("foo");
+  EXPECT_TRUE(::IsMatching(starts_with_foo, "foobar"));
+  EXPECT_TRUE(::IsMatching(starts_with_foo, "foo bar"));
+  EXPECT_FALSE(::IsMatching(starts_with_foo, "fobar"));
+  EXPECT_FALSE(::IsMatching(starts_with_foo, " foo"));
+
+  std::string str = "toto";
+  EXPECT_FALSE(::IsMatching(StrStartsWith(str), chocolatine));
+
+  str = "Choco";
+  EXPECT_TRUE(::IsMatching(StrStartsWith(str), chocolatine));
+
+  str = chocolatine;
+  EXPECT_TRUE(::IsMatching(StrStartsWith("Choco"), str));
+}
+
+TEST(AtbStringTest, StrEndsWith) {
+  // Empty inputs
+  EXPECT_TRUE(::IsMatching(StrEndsWith(""), ""));
+  EXPECT_TRUE(::IsMatching(StrEndsWith(""), coucou));
+  EXPECT_FALSE(::IsMatching(StrEndsWith(coucou), ""));
+
+  // Same input
+  EXPECT_TRUE(::IsMatching(StrEndsWith(coucou), coucou));
+
+  // Nominal
+  constexpr auto ends_with_foo = StrEndsWith("foo");
+  EXPECT_FALSE(::IsMatching(ends_with_foo, "foobar"));
+  EXPECT_FALSE(::IsMatching(ends_with_foo, "foo bar"));
+  EXPECT_FALSE(::IsMatching(ends_with_foo, "fobar"));
+  EXPECT_TRUE(::IsMatching(ends_with_foo, " foo"));
+
+  std::string str = "toto";
+  EXPECT_FALSE(::IsMatching(StrEndsWith(str), chocolatine));
+
+  str = "ine";
+  EXPECT_TRUE(::IsMatching(StrEndsWith(str), chocolatine));
+
+  str = chocolatine;
+  EXPECT_TRUE(::IsMatching(StrEndsWith("tine"), str));
+}
+
+TEST(AtbStringTest, StrContains) {
+  // Empty inputs
+  EXPECT_TRUE(::IsMatching(StrContains(""), ""));
+  EXPECT_TRUE(::IsMatching(StrContains(""), coucou));
+  EXPECT_FALSE(::IsMatching(StrContains(coucou), ""));
+
+  // Same input
+  EXPECT_TRUE(::IsMatching(StrContains(coucou), coucou));
+
+  // Nominal
+  constexpr auto constains_foo = StrContains(foo);
+  EXPECT_TRUE(::IsMatching(constains_foo, "foobar"));
+  EXPECT_TRUE(::IsMatching(constains_foo, "foo bar"));
+  EXPECT_FALSE(::IsMatching(constains_foo, "fobar"));
+  EXPECT_TRUE(::IsMatching(constains_foo, " foo bar"));
+  EXPECT_TRUE(::IsMatching(constains_foo, " foo bar foo"));
+
+  std::string str = "toto";
+  EXPECT_FALSE(::IsMatching(StrContains(str), chocolatine));
+
+  str = "ine";
+  EXPECT_TRUE(::IsMatching(StrContains(str), chocolatine));
+
+  str = chocolatine;
+  EXPECT_TRUE(::IsMatching(StrContains("tine"), str));
+
+  // Test d_where
+  auto where = std::numeric_limits<std::size_t>::max();
+
+  EXPECT_FALSE(::IsMatching(StrContains("baz", &where), " foo bar foo"));
+  EXPECT_EQ(where, std::numeric_limits<std::size_t>::max());
+
+  EXPECT_TRUE(::IsMatching(StrContains("foo", &where), " foo bar foo"));
+  EXPECT_EQ(where, 1);
+
+  EXPECT_TRUE(::IsMatching(StrContains("bar", &where), " foo bar foo"));
+  EXPECT_EQ(where, 5);
+}
+
+TEST(AtbStringTest, StrContainsR) {
+  // Empty input
+  EXPECT_TRUE(::IsMatching(StrContainsR(""), ""));
+  EXPECT_TRUE(::IsMatching(StrContainsR(""), coucou));
+  EXPECT_FALSE(::IsMatching(StrContainsR(coucou), ""));
+
+  // Same input
+  EXPECT_TRUE(::IsMatching(StrContainsR(coucou), coucou));
+
+  // Nominal
+  constexpr auto constains_r_foo = StrContainsR(foo);
+  EXPECT_TRUE(::IsMatching(constains_r_foo, "foobar"));
+  EXPECT_TRUE(::IsMatching(constains_r_foo, "foo bar"));
+  EXPECT_FALSE(::IsMatching(constains_r_foo, "fobar"));
+  EXPECT_TRUE(::IsMatching(constains_r_foo, " foo bar"));
+  EXPECT_TRUE(::IsMatching(constains_r_foo, " foo bar foo"));
+
+  std::string str = "toto";
+  EXPECT_FALSE(::IsMatching(StrContainsR(str), chocolatine));
+
+  str = "ine";
+  EXPECT_TRUE(::IsMatching(StrContainsR(str), chocolatine));
+
+  str = chocolatine;
+  EXPECT_TRUE(::IsMatching(StrContainsR("tine"), str));
+
+  // Test d_where
+  auto where = std::numeric_limits<std::size_t>::max();
+
+  EXPECT_FALSE(::IsMatching(StrContainsR("baz", &where), " foo bar foo"));
+  EXPECT_EQ(where, std::numeric_limits<std::size_t>::max());
+
+  EXPECT_TRUE(::IsMatching(StrContainsR("foo", &where), " foo bar foo"));
+  EXPECT_EQ(where, 9);
+
+  EXPECT_TRUE(::IsMatching(StrContainsR("bar", &where), " foo bar foo"));
+  EXPECT_EQ(where, 5);
+}
+
+TEST(AtbStringTest, StrContainsOneOf) {
+  // Empty inputs
+  EXPECT_FALSE(::IsMatching(StrContainsOneOf(""), ""));
+  EXPECT_FALSE(::IsMatching(StrContainsOneOf(""), coucou));
+  EXPECT_FALSE(::IsMatching(StrContainsOneOf(coucou), ""));
+
+  // Same input
+  EXPECT_TRUE(::IsMatching(StrContainsOneOf(coucou), coucou));
+
+  // Nominal
+  EXPECT_FALSE(::IsMatching(StrContainsOneOf("ab"), coucou));
+  EXPECT_TRUE(::IsMatching(StrContainsOneOf("abu"), coucou));
+  EXPECT_TRUE(::IsMatching(StrContainsOneOf("aabyu"), coucou));
+
+  // Test d_where
+  auto where = std::numeric_limits<std::size_t>::max();
+
+  EXPECT_FALSE(::IsMatching(StrContainsOneOf("zxy", &where), " foo bar foo"));
+  EXPECT_EQ(where, std::numeric_limits<std::size_t>::max());
+
+  EXPECT_TRUE(::IsMatching(StrContainsOneOf("akc", &where), " foo bar foo"));
+  EXPECT_EQ(where, 6);
+
+  EXPECT_TRUE(::IsMatching(StrContainsOneOf("hko", &where), " foo bar foo"));
+  EXPECT_EQ(where, 2);
+}
+
+TEST(AtbStringTest, StrContainsOneOfR) {
+  // Empty inputs
+  EXPECT_FALSE(::IsMatching(StrContainsOneOfR(""), ""));
+  EXPECT_FALSE(::IsMatching(StrContainsOneOfR(""), coucou));
+  EXPECT_FALSE(::IsMatching(StrContainsOneOfR(coucou), ""));
+
+  // Same input
+  EXPECT_TRUE(::IsMatching(StrContainsOneOfR(coucou), coucou));
+
+  // Nominal
+  EXPECT_FALSE(::IsMatching(StrContainsOneOfR("ab"), coucou));
+  EXPECT_TRUE(::IsMatching(StrContainsOneOfR("abu"), coucou));
+  EXPECT_TRUE(::IsMatching(StrContainsOneOfR("aabyu"), coucou));
+
+  // Test d_where
+  auto where = std::numeric_limits<std::size_t>::max();
+
+  EXPECT_FALSE(::IsMatching(StrContainsOneOfR("zxy", &where), " foo bar foo"));
+  EXPECT_EQ(where, std::numeric_limits<std::size_t>::max());
+
+  EXPECT_TRUE(::IsMatching(StrContainsOneOfR("acd", &where), " foo bar foo"));
+  EXPECT_EQ(where, 6);
+
+  EXPECT_TRUE(::IsMatching(StrContainsOneOfR("hko", &where), " foo bar foo"));
+  EXPECT_EQ(where, 11);
+}
+
+TEST(AtbStringTest, StrSwitch) {
+  EXPECT_EQ(2, StrSwitch<int>("Coucou")
+                   .Case("foo", 1)
+                   .Case("Coucou", 2)
+                   .Case(StrStartsWith("Cou"), 3)
+                   .Case(StrContains("c"), 4)
+                   .Default(-1));
+
+  EXPECT_EQ(3, StrSwitch<int>("Coucou")
+                   .Case("foo", 1)
+                   .Case("Coucou ", 2)
+                   .Case(StrStartsWith("Cou"), 3)
+                   .Case(StrContains("c"), 4)
+                   .Default(-1));
+
+  EXPECT_EQ(4, StrSwitch<int>("Coucou")
+                   .Case("foo", 1)
+                   .Case("Coucou ", 2)
+                   .Case(StrStartsWith("Cou "), 3)
+                   .Case(StrContains("c"), 4)
+                   .Default(-1));
+
+  EXPECT_EQ(5, StrSwitch<int>("Coucou")
+                   .Case("foo", 1)
+                   .Case("Coucou ", 2)
+                   .Case(StrStartsWith("Cou "), 3)
+                   .Case(StrContains("k"), 4)
+                   .Case(AllOf(StrStartsWith("Co"), StrEndsWith("ou")), 5)
+                   .Default(-1));
+
+  EXPECT_EQ(-1, StrSwitch<int>("Coucou")
+                    .Case("foo", 1)
+                    .Case("Coucou ", 2)
+                    .Case(StrStartsWith("Cou "), 3)
+                    .Case(StrContains("k"), 4)
+                    .Case(AllOf(StrStartsWith("Kou"), StrEndsWith("ou")), 5)
+                    .Default(-1));
+
+  EXPECT_EQ(-1, StrSwitch<int>("")
+                    .Case("foo", 1)
+                    .Case("Coucou ", 2)
+                    .Case(StrStartsWith("Cou "), 3)
+                    .Case(StrContains("k"), 4)
+                    .Case(AllOf(StrStartsWith("Kou"), StrEndsWith("ou")), 5)
+                    .Default(-1));
 }
 
 }  // namespace
