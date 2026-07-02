@@ -3,6 +3,7 @@ add_executable(tests-${PROJECT_NAME}
   test_tuple.cpp
   test_matchers.cpp
   test_string.cpp
+  test_scope_exit.cpp
 )
 
 target_link_libraries(tests-${PROJECT_NAME}
