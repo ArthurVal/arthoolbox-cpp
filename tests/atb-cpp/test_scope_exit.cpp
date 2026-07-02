@@ -49,6 +49,10 @@ TEST(AtbScopeExitTest, Execute) {
     scope_exit.Execute();
     EXPECT_EQ(value, 20);
     EXPECT_EQ(str, "Coucou +1");
+
+    scope_exit.Execute();
+    EXPECT_EQ(value, 20);
+    EXPECT_EQ(str, "Coucou +1");
   }
   EXPECT_EQ(value, 20);
   EXPECT_EQ(str, "Coucou +1");
