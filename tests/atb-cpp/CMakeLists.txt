@@ -2,6 +2,7 @@ add_executable(tests-${PROJECT_NAME}
   test_integer_sequence.cpp
   test_tuple.cpp
   test_matchers.cpp
+  test_matchers_string.cpp
   test_string.cpp
   test_scope_exit.cpp
 )
