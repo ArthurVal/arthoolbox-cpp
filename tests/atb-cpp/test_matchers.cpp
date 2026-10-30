@@ -353,7 +353,7 @@ TEST(AtbMatchersTest, AnyOf) {
   }
 }
 
-TEST(AtbMatchersTest, ArgsAt) {
+TEST(AtbMatchersTest, SelectArgs) {
   ::testing::StrictMock<CallableMock<bool, std::string_view>> mock;
   using testing::Return;
 
@@ -365,19 +365,20 @@ TEST(AtbMatchersTest, ArgsAt) {
       .RetiresOnSaturation();
 
   EXPECT_TRUE(
-      atb::IsMatching(ArgsAt<0>(std::ref(mock)), "Foo"sv, 1, 4, "Bar"sv));
+      atb::IsMatching(SelectArgs<0>(std::ref(mock)), "Foo"sv, 1, 4, "Bar"sv));
   EXPECT_FALSE(
-      atb::IsMatching(ArgsAt<3>(std::ref(mock)), 1, 4, "Bar"sv, "Foo"sv));
+      atb::IsMatching(SelectArgs<3>(std::ref(mock)), 1, 4, "Bar"sv, "Foo"sv));
   EXPECT_TRUE(
-      atb::IsMatching(ArgsAt<1>(std::ref(mock)), 1, "Foo"sv, 4, "Bar"sv));
+      atb::IsMatching(SelectArgs<1>(std::ref(mock)), 1, "Foo"sv, 4, "Bar"sv));
 
-  EXPECT_TRUE(atb::IsMatching(
-      AllOf(ArgsAt<0>(Ge(0)), ArgsAt<2>(Eq(4)),
-            ArgsAt<1, 3>([](auto... s) { return ((s.size() == 3) && ...); })),
-      1, "Foo"sv, 4, "Bar"sv));
+  EXPECT_TRUE(atb::IsMatching(AllOf(SelectArgs<0>(Ge(0)), SelectArgs<2>(Eq(4)),
+                                    SelectArgs<1, 3>([](auto... s) {
+                                      return ((s.size() == 3) && ...);
+                                    })),
+                              1, "Foo"sv, 4, "Bar"sv));
 }
 
-TEST(AtbMatchersTest, AllArgs) {
+TEST(AtbMatchersTest, EveryArg) {
   ::testing::StrictMock<CallableMock<bool, std::string_view>> mock;
   using testing::Return;
 
@@ -425,7 +426,7 @@ TEST(AtbMatchersTest, AllArgs) {
   }
 }
 
-TEST(AtbMatchersTest, AnyArgs) {
+TEST(AtbMatchersTest, AnyArg) {
   ::testing::StrictMock<CallableMock<bool, std::string_view>> mock;
   using testing::Return;
 
@@ -519,7 +520,7 @@ TEST(AtbMatchersTest, AnyMatcher) {
   EXPECT_TRUE(any.IsInitialized());
   EXPECT_TRUE(atb::IsMatching(any, 42, "Chocolatine"sv));
 
-  any = AllOf(ArgsAt<0>(Eq(10)), ArgsAt<1>(Eq("Toto"sv)));
+  any = AllOf(SelectArgs<0>(Eq(10)), SelectArgs<1>(Eq("Toto"sv)));
   EXPECT_TRUE(any.IsInitialized());
   EXPECT_TRUE(atb::IsMatching(any, 10, "Toto"sv));
   EXPECT_FALSE(atb::IsMatching(any, 10, "Tata"sv));

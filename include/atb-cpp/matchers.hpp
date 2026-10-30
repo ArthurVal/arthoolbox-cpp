@@ -256,7 +256,7 @@ struct AnyOf {
  * @return m(v[i]...) by selecting the Ith argument(s) from v...
  */
 template <class Matcher, std::size_t... I>
-struct ArgsAtMatcher {
+struct SelectArgsMatcher {
   Matcher matcher;
 
   constexpr auto operator()(auto&&... v) const noexcept -> bool {
@@ -266,8 +266,8 @@ struct ArgsAtMatcher {
 };
 
 template <std::size_t... I, class Matcher>
-constexpr auto ArgsAt(Matcher&& m)
-    -> ArgsAtMatcher<std::remove_cvref_t<Matcher>, I...> {
+constexpr auto SelectArgs(Matcher&& m)
+    -> SelectArgsMatcher<std::remove_cvref_t<Matcher>, I...> {
   return {ATB_FWD(m)};
 }
 
