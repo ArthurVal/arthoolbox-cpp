@@ -300,7 +300,7 @@ struct AnyArg {
  * the underlying \a matcher
  */
 template <class F, class Matcher>
-struct MapArg {
+struct MapArgs {
   F transform;
   Matcher matcher;
 
@@ -314,7 +314,7 @@ struct MapArg {
  * underlying \a matcher
  */
 template <class F, class Matcher>
-struct ReduceArg {
+struct ReduceArgs {
   F reduce;
   Matcher matcher;
 

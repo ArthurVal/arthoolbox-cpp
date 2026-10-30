@@ -488,7 +488,7 @@ TEST(AtbMatchersTest, MapArg) {
         .WillOnce(Return(true))
         .RetiresOnSaturation();
 
-    EXPECT_TRUE(atb::IsMatching(MapArg(std::ref(map), std::ref(matcher)), 42));
+    EXPECT_TRUE(atb::IsMatching(MapArgs(std::ref(map), std::ref(matcher)), 42));
   }
 
   {
@@ -501,7 +501,7 @@ TEST(AtbMatchersTest, MapArg) {
         .WillOnce(Return(false))
         .RetiresOnSaturation();
 
-    EXPECT_FALSE(atb::IsMatching(MapArg(&Foo::bar, std::ref(matcher)),
+    EXPECT_FALSE(atb::IsMatching(MapArgs(&Foo::bar, std::ref(matcher)),
                                  Foo{42.f, 333, true}, Foo{3.14f, 222, true},
                                  Foo{2.7f, 111, false}));
   }
@@ -527,7 +527,7 @@ TEST(AtbMatchersTest, ReduceArg) {
         .WillOnce(Return(true))
         .RetiresOnSaturation();
 
-    EXPECT_TRUE(atb::IsMatching(ReduceArg(std::ref(reduce), std::ref(matcher)),
+    EXPECT_TRUE(atb::IsMatching(ReduceArgs(std::ref(reduce), std::ref(matcher)),
                                 1, 2, 3, 4));
   }
 
@@ -546,7 +546,7 @@ TEST(AtbMatchersTest, ReduceArg) {
         .RetiresOnSaturation();
 
     EXPECT_FALSE(
-        atb::IsMatching(ReduceArg(std::ref(reduce), std::ref(matcher)), "Yo"));
+        atb::IsMatching(ReduceArgs(std::ref(reduce), std::ref(matcher)), "Yo"));
   }
 }
 
