@@ -1,6 +1,10 @@
 #pragma once
 
-#include <type_traits>  // false_type
+#include <concepts>
+#include <type_traits>
+
+
+#define ATB_FWD(v) std::forward<decltype(v)>(v)
 
 namespace atb {
 
@@ -17,15 +21,6 @@ struct AlwaysTrue : std::true_type {};
 
 template <typename... T>
 constexpr bool AlwaysTrue_v = AlwaysTrue<T...>::value;
-
-/// Remove reference, const and volatile qualifiers.
-template <class T>
-struct RemoveCVRef {
-  using type = std::remove_cv_t<std::remove_reference_t<T>>;
-};
-
-template <class T>
-using RemoveCVRef_t = typename RemoveCVRef<T>::type;
 
 namespace details {
 
@@ -54,5 +49,29 @@ struct HasTrait : details::HasTraitImpl<void, Trait, Args...> {};
 
 template <template <class...> class Trait, class... Args>
 constexpr bool HasTrait_v = HasTrait<Trait, Args...>::value;
+
+
+/// Meta programmation use to check if T is a templated instanciation of U<...>
+template <class T, template <class...> class U>
+inline constexpr bool is_specialization_of_v = false;
+
+template <template <class...> class U, class... Args>
+inline constexpr bool is_specialization_of_v<U<Args...>, U> = true;
+
+template <class T, template <class...> class U>
+concept specialization_of = is_specialization_of_v<std::remove_cvref_t<T>, U>;
+
+/// Transparently unwraps std::reference_wrapper to an actual C++ reference.
+/// If it's a normal value, it just perfectly forwards it.
+template <class T>
+constexpr auto unwrap_reference(T&& value) noexcept -> decltype(auto) {
+  using RawT = std::remove_cvref_t<T>;
+  using UnwrappedT = std::unwrap_reference_t<RawT>;
+  if constexpr (!std::is_same_v<RawT, UnwrappedT>) {
+    return value.get();
+  } else {
+    return FWD(value);
+  }
+}
 
 }  // namespace atb

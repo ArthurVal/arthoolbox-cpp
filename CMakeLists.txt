@@ -43,7 +43,7 @@ utils_disable_in_source_builds()
 ###############################################################################
 
 # CXX STANDARD ################################################################
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 cmake_print_variables(CMAKE_CXX_STANDARD)
 
 set(CMAKE_CXX_STANDARD_REQUIRED True)
