@@ -158,185 +158,189 @@ TEST(AtbStringTest, StrCat) {
 
 TEST(AtbStringTest, StrStartsWith) {
   // Empty inputs
-  EXPECT_TRUE(::IsMatching(StrStartsWith(""), ""));
-  EXPECT_TRUE(::IsMatching(StrStartsWith(""), coucou));
-  EXPECT_FALSE(::IsMatching(StrStartsWith(coucou), ""));
+  EXPECT_TRUE(atb::IsMatching(StrStartsWith(""), ""));
+  EXPECT_TRUE(atb::IsMatching(StrStartsWith(""), coucou));
+  EXPECT_FALSE(atb::IsMatching(StrStartsWith(coucou), ""));
 
   // Same input
-  EXPECT_TRUE(::IsMatching(StrStartsWith(coucou), coucou));
+  EXPECT_TRUE(atb::IsMatching(StrStartsWith(coucou), coucou));
 
   // Nominal
   constexpr auto starts_with_foo = StrStartsWith("foo");
-  EXPECT_TRUE(::IsMatching(starts_with_foo, "foobar"));
-  EXPECT_TRUE(::IsMatching(starts_with_foo, "foo bar"));
-  EXPECT_FALSE(::IsMatching(starts_with_foo, "fobar"));
-  EXPECT_FALSE(::IsMatching(starts_with_foo, " foo"));
+  EXPECT_TRUE(atb::IsMatching(starts_with_foo, "foobar"));
+  EXPECT_TRUE(atb::IsMatching(starts_with_foo, "foo bar"));
+  EXPECT_FALSE(atb::IsMatching(starts_with_foo, "fobar"));
+  EXPECT_FALSE(atb::IsMatching(starts_with_foo, " foo"));
 
   std::string str = "toto";
-  EXPECT_FALSE(::IsMatching(StrStartsWith(str), chocolatine));
+  EXPECT_FALSE(atb::IsMatching(StrStartsWith(str), chocolatine));
 
   str = "Choco";
-  EXPECT_TRUE(::IsMatching(StrStartsWith(str), chocolatine));
+  EXPECT_TRUE(atb::IsMatching(StrStartsWith(str), chocolatine));
 
   str = chocolatine;
-  EXPECT_TRUE(::IsMatching(StrStartsWith("Choco"), str));
+  EXPECT_TRUE(atb::IsMatching(StrStartsWith("Choco"), str));
 }
 
 TEST(AtbStringTest, StrEndsWith) {
   // Empty inputs
-  EXPECT_TRUE(::IsMatching(StrEndsWith(""), ""));
-  EXPECT_TRUE(::IsMatching(StrEndsWith(""), coucou));
-  EXPECT_FALSE(::IsMatching(StrEndsWith(coucou), ""));
+  EXPECT_TRUE(atb::IsMatching(StrEndsWith(""), ""));
+  EXPECT_TRUE(atb::IsMatching(StrEndsWith(""), coucou));
+  EXPECT_FALSE(atb::IsMatching(StrEndsWith(coucou), ""));
 
   // Same input
-  EXPECT_TRUE(::IsMatching(StrEndsWith(coucou), coucou));
+  EXPECT_TRUE(atb::IsMatching(StrEndsWith(coucou), coucou));
 
   // Nominal
   constexpr auto ends_with_foo = StrEndsWith("foo");
-  EXPECT_FALSE(::IsMatching(ends_with_foo, "foobar"));
-  EXPECT_FALSE(::IsMatching(ends_with_foo, "foo bar"));
-  EXPECT_FALSE(::IsMatching(ends_with_foo, "fobar"));
-  EXPECT_TRUE(::IsMatching(ends_with_foo, " foo"));
+  EXPECT_FALSE(atb::IsMatching(ends_with_foo, "foobar"));
+  EXPECT_FALSE(atb::IsMatching(ends_with_foo, "foo bar"));
+  EXPECT_FALSE(atb::IsMatching(ends_with_foo, "fobar"));
+  EXPECT_TRUE(atb::IsMatching(ends_with_foo, " foo"));
 
   std::string str = "toto";
-  EXPECT_FALSE(::IsMatching(StrEndsWith(str), chocolatine));
+  EXPECT_FALSE(atb::IsMatching(StrEndsWith(str), chocolatine));
 
   str = "ine";
-  EXPECT_TRUE(::IsMatching(StrEndsWith(str), chocolatine));
+  EXPECT_TRUE(atb::IsMatching(StrEndsWith(str), chocolatine));
 
   str = chocolatine;
-  EXPECT_TRUE(::IsMatching(StrEndsWith("tine"), str));
+  EXPECT_TRUE(atb::IsMatching(StrEndsWith("tine"), str));
 }
 
 TEST(AtbStringTest, StrContains) {
   // Empty inputs
-  EXPECT_TRUE(::IsMatching(StrContains(""), ""));
-  EXPECT_TRUE(::IsMatching(StrContains(""), coucou));
-  EXPECT_FALSE(::IsMatching(StrContains(coucou), ""));
+  EXPECT_TRUE(atb::IsMatching(StrContains(""), ""));
+  EXPECT_TRUE(atb::IsMatching(StrContains(""), coucou));
+  EXPECT_FALSE(atb::IsMatching(StrContains(coucou), ""));
 
   // Same input
-  EXPECT_TRUE(::IsMatching(StrContains(coucou), coucou));
+  EXPECT_TRUE(atb::IsMatching(StrContains(coucou), coucou));
 
   // Nominal
   constexpr auto constains_foo = StrContains(foo);
-  EXPECT_TRUE(::IsMatching(constains_foo, "foobar"));
-  EXPECT_TRUE(::IsMatching(constains_foo, "foo bar"));
-  EXPECT_FALSE(::IsMatching(constains_foo, "fobar"));
-  EXPECT_TRUE(::IsMatching(constains_foo, " foo bar"));
-  EXPECT_TRUE(::IsMatching(constains_foo, " foo bar foo"));
+  EXPECT_TRUE(atb::IsMatching(constains_foo, "foobar"));
+  EXPECT_TRUE(atb::IsMatching(constains_foo, "foo bar"));
+  EXPECT_FALSE(atb::IsMatching(constains_foo, "fobar"));
+  EXPECT_TRUE(atb::IsMatching(constains_foo, " foo bar"));
+  EXPECT_TRUE(atb::IsMatching(constains_foo, " foo bar foo"));
 
   std::string str = "toto";
-  EXPECT_FALSE(::IsMatching(StrContains(str), chocolatine));
+  EXPECT_FALSE(atb::IsMatching(StrContains(str), chocolatine));
 
   str = "ine";
-  EXPECT_TRUE(::IsMatching(StrContains(str), chocolatine));
+  EXPECT_TRUE(atb::IsMatching(StrContains(str), chocolatine));
 
   str = chocolatine;
-  EXPECT_TRUE(::IsMatching(StrContains("tine"), str));
+  EXPECT_TRUE(atb::IsMatching(StrContains("tine"), str));
 
   // Test d_where
   auto where = std::numeric_limits<std::size_t>::max();
 
-  EXPECT_FALSE(::IsMatching(StrContains("baz", &where), " foo bar foo"));
+  EXPECT_FALSE(atb::IsMatching(StrContains("baz", &where), " foo bar foo"));
   EXPECT_EQ(where, std::numeric_limits<std::size_t>::max());
 
-  EXPECT_TRUE(::IsMatching(StrContains("foo", &where), " foo bar foo"));
+  EXPECT_TRUE(atb::IsMatching(StrContains("foo", &where), " foo bar foo"));
   EXPECT_EQ(where, 1);
 
-  EXPECT_TRUE(::IsMatching(StrContains("bar", &where), " foo bar foo"));
+  EXPECT_TRUE(atb::IsMatching(StrContains("bar", &where), " foo bar foo"));
   EXPECT_EQ(where, 5);
 }
 
 TEST(AtbStringTest, StrContainsR) {
   // Empty input
-  EXPECT_TRUE(::IsMatching(StrContainsR(""), ""));
-  EXPECT_TRUE(::IsMatching(StrContainsR(""), coucou));
-  EXPECT_FALSE(::IsMatching(StrContainsR(coucou), ""));
+  EXPECT_TRUE(atb::IsMatching(StrContainsR(""), ""));
+  EXPECT_TRUE(atb::IsMatching(StrContainsR(""), coucou));
+  EXPECT_FALSE(atb::IsMatching(StrContainsR(coucou), ""));
 
   // Same input
-  EXPECT_TRUE(::IsMatching(StrContainsR(coucou), coucou));
+  EXPECT_TRUE(atb::IsMatching(StrContainsR(coucou), coucou));
 
   // Nominal
   constexpr auto constains_r_foo = StrContainsR(foo);
-  EXPECT_TRUE(::IsMatching(constains_r_foo, "foobar"));
-  EXPECT_TRUE(::IsMatching(constains_r_foo, "foo bar"));
-  EXPECT_FALSE(::IsMatching(constains_r_foo, "fobar"));
-  EXPECT_TRUE(::IsMatching(constains_r_foo, " foo bar"));
-  EXPECT_TRUE(::IsMatching(constains_r_foo, " foo bar foo"));
+  EXPECT_TRUE(atb::IsMatching(constains_r_foo, "foobar"));
+  EXPECT_TRUE(atb::IsMatching(constains_r_foo, "foo bar"));
+  EXPECT_FALSE(atb::IsMatching(constains_r_foo, "fobar"));
+  EXPECT_TRUE(atb::IsMatching(constains_r_foo, " foo bar"));
+  EXPECT_TRUE(atb::IsMatching(constains_r_foo, " foo bar foo"));
 
   std::string str = "toto";
-  EXPECT_FALSE(::IsMatching(StrContainsR(str), chocolatine));
+  EXPECT_FALSE(atb::IsMatching(StrContainsR(str), chocolatine));
 
   str = "ine";
-  EXPECT_TRUE(::IsMatching(StrContainsR(str), chocolatine));
+  EXPECT_TRUE(atb::IsMatching(StrContainsR(str), chocolatine));
 
   str = chocolatine;
-  EXPECT_TRUE(::IsMatching(StrContainsR("tine"), str));
+  EXPECT_TRUE(atb::IsMatching(StrContainsR("tine"), str));
 
   // Test d_where
   auto where = std::numeric_limits<std::size_t>::max();
 
-  EXPECT_FALSE(::IsMatching(StrContainsR("baz", &where), " foo bar foo"));
+  EXPECT_FALSE(atb::IsMatching(StrContainsR("baz", &where), " foo bar foo"));
   EXPECT_EQ(where, std::numeric_limits<std::size_t>::max());
 
-  EXPECT_TRUE(::IsMatching(StrContainsR("foo", &where), " foo bar foo"));
+  EXPECT_TRUE(atb::IsMatching(StrContainsR("foo", &where), " foo bar foo"));
   EXPECT_EQ(where, 9);
 
-  EXPECT_TRUE(::IsMatching(StrContainsR("bar", &where), " foo bar foo"));
+  EXPECT_TRUE(atb::IsMatching(StrContainsR("bar", &where), " foo bar foo"));
   EXPECT_EQ(where, 5);
 }
 
 TEST(AtbStringTest, StrContainsOneOf) {
   // Empty inputs
-  EXPECT_FALSE(::IsMatching(StrContainsOneOf(""), ""));
-  EXPECT_FALSE(::IsMatching(StrContainsOneOf(""), coucou));
-  EXPECT_FALSE(::IsMatching(StrContainsOneOf(coucou), ""));
+  EXPECT_FALSE(atb::IsMatching(StrContainsOneOf(""), ""));
+  EXPECT_FALSE(atb::IsMatching(StrContainsOneOf(""), coucou));
+  EXPECT_FALSE(atb::IsMatching(StrContainsOneOf(coucou), ""));
 
   // Same input
-  EXPECT_TRUE(::IsMatching(StrContainsOneOf(coucou), coucou));
+  EXPECT_TRUE(atb::IsMatching(StrContainsOneOf(coucou), coucou));
 
   // Nominal
-  EXPECT_FALSE(::IsMatching(StrContainsOneOf("ab"), coucou));
-  EXPECT_TRUE(::IsMatching(StrContainsOneOf("abu"), coucou));
-  EXPECT_TRUE(::IsMatching(StrContainsOneOf("aabyu"), coucou));
+  EXPECT_FALSE(atb::IsMatching(StrContainsOneOf("ab"), coucou));
+  EXPECT_TRUE(atb::IsMatching(StrContainsOneOf("abu"), coucou));
+  EXPECT_TRUE(atb::IsMatching(StrContainsOneOf("aabyu"), coucou));
 
   // Test d_where
   auto where = std::numeric_limits<std::size_t>::max();
 
-  EXPECT_FALSE(::IsMatching(StrContainsOneOf("zxy", &where), " foo bar foo"));
+  EXPECT_FALSE(
+      atb::IsMatching(StrContainsOneOf("zxy", &where), " foo bar foo"));
   EXPECT_EQ(where, std::numeric_limits<std::size_t>::max());
 
-  EXPECT_TRUE(::IsMatching(StrContainsOneOf("akc", &where), " foo bar foo"));
+  EXPECT_TRUE(atb::IsMatching(StrContainsOneOf("akc", &where), " foo bar foo"));
   EXPECT_EQ(where, 6);
 
-  EXPECT_TRUE(::IsMatching(StrContainsOneOf("hko", &where), " foo bar foo"));
+  EXPECT_TRUE(atb::IsMatching(StrContainsOneOf("hko", &where), " foo bar foo"));
   EXPECT_EQ(where, 2);
 }
 
 TEST(AtbStringTest, StrContainsOneOfR) {
   // Empty inputs
-  EXPECT_FALSE(::IsMatching(StrContainsOneOfR(""), ""));
-  EXPECT_FALSE(::IsMatching(StrContainsOneOfR(""), coucou));
-  EXPECT_FALSE(::IsMatching(StrContainsOneOfR(coucou), ""));
+  EXPECT_FALSE(atb::IsMatching(StrContainsOneOfR(""), ""));
+  EXPECT_FALSE(atb::IsMatching(StrContainsOneOfR(""), coucou));
+  EXPECT_FALSE(atb::IsMatching(StrContainsOneOfR(coucou), ""));
 
   // Same input
-  EXPECT_TRUE(::IsMatching(StrContainsOneOfR(coucou), coucou));
+  EXPECT_TRUE(atb::IsMatching(StrContainsOneOfR(coucou), coucou));
 
   // Nominal
-  EXPECT_FALSE(::IsMatching(StrContainsOneOfR("ab"), coucou));
-  EXPECT_TRUE(::IsMatching(StrContainsOneOfR("abu"), coucou));
-  EXPECT_TRUE(::IsMatching(StrContainsOneOfR("aabyu"), coucou));
+  EXPECT_FALSE(atb::IsMatching(StrContainsOneOfR("ab"), coucou));
+  EXPECT_TRUE(atb::IsMatching(StrContainsOneOfR("abu"), coucou));
+  EXPECT_TRUE(atb::IsMatching(StrContainsOneOfR("aabyu"), coucou));
 
   // Test d_where
   auto where = std::numeric_limits<std::size_t>::max();
 
-  EXPECT_FALSE(::IsMatching(StrContainsOneOfR("zxy", &where), " foo bar foo"));
+  EXPECT_FALSE(
+      atb::IsMatching(StrContainsOneOfR("zxy", &where), " foo bar foo"));
   EXPECT_EQ(where, std::numeric_limits<std::size_t>::max());
 
-  EXPECT_TRUE(::IsMatching(StrContainsOneOfR("acd", &where), " foo bar foo"));
+  EXPECT_TRUE(
+      atb::IsMatching(StrContainsOneOfR("acd", &where), " foo bar foo"));
   EXPECT_EQ(where, 6);
 
-  EXPECT_TRUE(::IsMatching(StrContainsOneOfR("hko", &where), " foo bar foo"));
+  EXPECT_TRUE(
+      atb::IsMatching(StrContainsOneOfR("hko", &where), " foo bar foo"));
   EXPECT_EQ(where, 11);
 }
 

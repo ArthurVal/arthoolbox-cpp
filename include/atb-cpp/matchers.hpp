@@ -8,123 +8,67 @@
 #include <tuple>       // std::make_tuple
 #include <utility>     // std::forward/...
 
-#include "atb-cpp/type_traits.hpp"  // <type_traits>/HasTraits_v
+#include "atb-cpp/type_traits.hpp"
 
 namespace atb {
 
 namespace details {
 
-/// Traits to check for the existence of IsMatching class method
+/// Poison for the CPO - Prevent fall backs when the function is undefined for
+/// the concepts below
+void IsMatching() = delete;
+
+/// Checks if m.IsMatching(...) exists and returns a type convertible to bool
 template <class M, class... Args>
-using IsMatchingMethod =
-    decltype(std::declval<M>().IsMatching(std::declval<Args>()...));
-
-/// Traits to check for the existence of IsMatching free function
-template <class M, class... Args>
-using IsMatchingFreeFunction =
-    decltype(IsMatching(std::declval<M>(), std::declval<Args>()...));
-
-}  // namespace details
-
-/**
- * @brief Matcher traits use to probe any type M for Matcher's interfaces
- *
- * This traits can be use to check if any type M is defined as a 'Matcher' for
- * the provided Args... arguments.
- *
- * A 'Matcher' is an object m (of type M) that provides at least ONE of the
- * following interface for the given args... (of type ...Args):
- * - Method:        `m.IsMatching(args...) -> bool`
- * - Free function: `IsMatching(m, args...) -> bool`
- * - Invokable:     `m(args...) -> bool`
- *
- * The traits therefore defines the static method `::IsValidMatcher() -> bool`
- * that returns TRUE whenever the M/Args provide one of the interface listed
- * above. False otherwise.
- *
- * Each interface existence can be check individually by the `::HasMethod() ->
- * bool`, `::HasFreeFunction() -> bool` and `::IsInvokable() -> bool` static
- * methods.
- *
- * A Static assert helper static method `::AssertWhenInvalid() -> void` is also
- * provided, in order to `static_assert(IsValidMatcher(), ...)` with a default
- * message listing the needed requirement on those types.
- */
-template <class M, class... Args>
-struct MatcherTraits {
-  /**
-   * @return True if M has 'm.IsMatching(args...) -> bool' interface
-   */
-  static constexpr auto HasMethod() -> bool {
-    return HasTrait_v<details::IsMatchingMethod, M, Args...>;
-  }
-
-  /**
-   * @return True if the function 'IsMatching(m, args...) -> bool' is defined
-   */
-  static constexpr auto HasFreeFunction() -> bool {
-    return HasTrait_v<details::IsMatchingFreeFunction, M, Args...>;
-  }
-
-  /**
-   * @return True if M is invokable  with 'm(args...) -> bool' interface
-   */
-  static constexpr auto IsInvokable() -> bool {
-    return std::is_invocable_r_v<bool, M, Args...>;
-  }
-
-  /**
-   * @return True if the M/Args provide at least ONE of the required interface
-   */
-  static constexpr auto IsValidMatcher() -> bool {
-    return HasMethod() || HasFreeFunction() || IsInvokable();
-  }
-
-  /**
-   * @brief Static assert when M and Args... are not valid
-   * @note This provides a single and clear message for assertion since Traits
-   *       is responsible for defining what interfaces we are expecting
-   */
-  static constexpr auto AssertWhenInvalid() -> void {
-    static_assert(
-        IsValidMatcher(),
-        "\nThe Matcher type M provided doesn't have the correct interfaces."
-        "\nIt must defined one of the following interface:"
-        "\n - 'm.IsMatching(args...)  -> bool'"
-        "\n - 'IsMatching(m, args...)  -> bool' (using ADL)"
-        "\n - 'std::invoke(m, args...)  -> bool'");
-  }
+concept HasIsMatchingMethod = requires(M&& m, Args&&... args) {
+  { ATB_FWD(m).IsMatching(ATB_FWD(args)...) } -> std::convertible_to<bool>;
 };
 
-namespace details {
+/// Checks if m.IsMatching(...) exists and returns a type convertible to bool
+template <class M, class... Args>
+concept HasIsMatchingFreeFunction = requires(M&& m, Args&&... args) {
+  { IsMatching(ATB_FWD(m), ATB_FWD(args)...) } -> std::convertible_to<bool>;
+};
 
-/// Prevent fall backs for the CPO
-void IsMatching() = delete;
+/// Checks if std::invoke(m, ...) is valid and returns a type convertible to
+/// bool
+template <class M, class... Args>
+concept IsInvokableMatcher = requires(M&& m, Args&&... args) {
+  { std::invoke(ATB_FWD(m), ATB_FWD(args)...) } -> std::convertible_to<bool>;
+};
+
+/// Checks that the given type M is a matcher overall
+template <class M, class... Args>
+concept IsMatcherFor =
+    HasIsMatchingMethod<M, Args...> || HasIsMatchingFreeFunction<M, Args...> ||
+    IsInvokableMatcher<M, Args...>;
 
 /// IsMatching Customisation Point Object (CPO) dispatcher
 struct IsMatching_fn {
+  /// Nominal dispatcher call
   template <class M, class... Args>
+    requires IsMatcherFor<M, Args...> &&
+             (!specialization_of<M, std::reference_wrapper>)
   constexpr auto operator()(M&& m, Args&&... args) const -> bool {
-    using Traits = MatcherTraits<std::remove_reference_t<M>,
-                                 std::remove_reference_t<Args>...>;
-
-    Traits::AssertWhenInvalid();
-
-    if constexpr (Traits::HasMethod()) {
-      return std::forward<M>(m).IsMatching(std::forward<Args>(args)...);
-    } else if constexpr (Traits::HasFreeFunction()) {
-      return IsMatching(std::forward<M>(m), std::forward<Args>(args)...);
-    } else if constexpr (Traits::IsInvokable()) {
-      return std::invoke(std::forward<M>(m), std::forward<Args>(args)...);
+    // Dispatch prioritizing Method > Free Function > Invokable
+    if constexpr (HasIsMatchingMethod<M, Args...>) {
+      return ATB_FWD(m).IsMatching(ATB_FWD(args)...);
+    } else if constexpr (HasIsMatchingFreeFunction<M, Args...>) {
+      return IsMatching(ATB_FWD(m), ATB_FWD(args)...);
     } else {
-      return false;  // Should never be reached due to AssertWhenInvalid
+      return std::invoke(ATB_FWD(m), ATB_FWD(args)...);
     }
+  }
+
+  /// Handles std::reference_wrapper
+  template <class... Args>
+  constexpr auto operator()(specialization_of<std::reference_wrapper> auto ref,
+                            Args&&... args) const -> bool {
+    return (*this)(ref.get(), ATB_FWD(args)...);
   }
 };
 
 }  // namespace details
-
-}  // namespace atb
 
 /**
  * @brief Checks for a match between ANY matcher \a m and a set of \a args
@@ -150,165 +94,216 @@ struct IsMatching_fn {
  * @return bool True whenever the matcher succesfully matches against the
  *              provided arguments, false otherwise.
  */
-inline constexpr atb::details::IsMatching_fn IsMatching{};
+inline constexpr details::IsMatching_fn IsMatching{};
 
-namespace atb {
+/// Concept indicating if a type T is 'Printable' into Sink, ie one of the
+/// following interfaces exist (t of type T and sink of type Sink):
+/// - Method call (i.e. `t.PrintInto(sink)`)
+/// - FreeFunction using ADL (i.e. `PrintInto(sink, t)`)
+/// - std::invoke (i.e. `std::invoke(t, sink)`)
+/// - Stream overload (i.e. `sink << t`)
+template <class M, class... Args>
+concept MatcherFor = requires(M&& matcher, Args&&... args) {
+  { atb::IsMatching(matcher, ATB_FWD(args)...) } -> std::convertible_to<bool>;
+};
 
 // COMMON MATCHERS //////////////////////////////////////////////////////////
 
 /**
- * @return Always Values, independently of the inputs
+ * @brief Matcher that always returns Value, independently of the inputs
  */
 template <bool Value>
-constexpr auto Always() noexcept {
-  return [](const auto&...) noexcept -> bool { return Value; };
-}
+struct Always {
+  constexpr auto operator()(auto&&...) const noexcept -> bool { return Value; }
+};
 
 /**
- * @return true when v == expected
+ * @brief Matcher that returns true when v == expected
  */
 template <class T>
-constexpr auto Eq(T expected) noexcept {
-  return [expected = std::move(expected)](const auto& v) -> bool {
-    return v == expected;
-  };
-}
+struct Eq {
+  T expected;
+  constexpr auto operator()(auto&& v) const noexcept -> bool {
+    return ATB_FWD(v) == expected;
+  }
+};
 
 /**
- * @return true when v != expected
+ * @brief Matcher that returns true when v != expected
  */
 template <class T>
-constexpr auto Ne(T expected) noexcept {
-  return [expected = std::move(expected)](const auto& v) -> bool {
-    return v != expected;
-  };
-}
+struct Ne {
+  T expected;
+  constexpr auto operator()(auto&& v) const noexcept -> bool {
+    return ATB_FWD(v) != expected;
+  }
+};
 
 /**
- * @return true when v >= expected
+ * @brief Matcher that returns true when v >= expected
  */
 template <class T>
-constexpr auto Ge(T expected) noexcept {
-  return [expected = std::move(expected)](const auto& v) -> bool {
-    return v >= expected;
-  };
-}
+struct Ge {
+  T expected;
+  constexpr auto operator()(auto&& v) const noexcept -> bool {
+    return ATB_FWD(v) >= expected;
+  }
+};
 
 /**
- * @return true when v > expected
+ * @brief Matcher that returns true when v > expected
  */
 template <class T>
-constexpr auto Gt(T expected) noexcept {
-  return [expected = std::move(expected)](const auto& v) -> bool {
-    return v > expected;
-  };
-}
+struct Gt {
+  T expected;
+  constexpr auto operator()(auto&& v) const noexcept -> bool {
+    return ATB_FWD(v) > expected;
+  }
+};
 
 /**
- * @return true when v <= expected
+ * @brief Matcher that returns true when v <= expected
  */
 template <class T>
-constexpr auto Le(T expected) noexcept {
-  return [expected = std::move(expected)](const auto& v) -> bool {
-    return v <= expected;
-  };
-}
+struct Le {
+  T expected;
+  constexpr auto operator()(auto&& v) const noexcept -> bool {
+    return ATB_FWD(v) <= expected;
+  }
+};
 
 /**
- * @return true when v < expected
+ * @brief Matcher that returns true when v < expected
  */
 template <class T>
-constexpr auto Lt(T expected) noexcept {
-  return [expected = std::move(expected)](const auto& v) -> bool {
-    return v < expected;
-  };
-}
+struct Lt {
+  T expected;
+  constexpr auto operator()(auto&& v) const noexcept -> bool {
+    return ATB_FWD(v) < expected;
+  }
+};
 
 /**
- * @return true when |v - expected| <= abs_error
+ * @brief Matcher that returns true when |v - expected| <= abs_error
  */
-template <class T, class ErrorType = double>
-constexpr auto Near(T expected, ErrorType abs_error = 1e-6) noexcept {
-  return [expected = std::move(expected),
-          abs_error = std::move(abs_error)](const auto& v) -> bool {
-    return (std::abs(v - expected) <= abs_error);
-  };
-}
+template <class T, class Error = double>
+struct Near {
+  T expected;
+  Error abs_error = 1e-6;
+
+  constexpr auto operator()(auto&& v) const noexcept -> bool {
+    return (std::abs(ATB_FWD(v) - expected) <= abs_error);
+  }
+};
 
 // COMPOSITE MATCHERS ///////////////////////////////////////////////////////
 
 /**
- * @return The negation of m(v...)
+ * @brief Matcher that negates a given matcher
  */
 template <class Matcher>
-constexpr auto Not(Matcher m) noexcept {
-  return [m = std::move(m)](const auto&... v) -> bool {
-    return !::IsMatching(m, v...);
-  };
-}
+struct Not {
+  Matcher matcher;
+
+  constexpr auto operator()(auto&&... v) const noexcept -> bool {
+    return !atb::IsMatching(matcher, ATB_FWD(v)...);
+  }
+};
 
 /**
  * @return true if ALL matchers returns true
  */
 template <class... Matchers>
-constexpr auto AllOf(Matchers... m) noexcept {
-  return
-      [matchers = std::make_tuple(std::move(m)...)](const auto&... v) -> bool {
-        return std::apply(
-            [&](const auto&... _m) { return (::IsMatching(_m, v...) && ...); },
-            matchers);
-      };
-}
+struct AllOf {
+  std::tuple<Matchers...> matchers;
+  static_assert(sizeof...(Matchers) > 0);
+
+  constexpr explicit AllOf(Matchers... m) noexcept
+      : matchers(std::move(m)...) {}
+
+  constexpr auto operator()(const auto&... v) const noexcept -> bool {
+    return std::apply(
+        [&](const auto&... m) -> bool {
+          return (atb::IsMatching(m, v...) && ...);
+        },
+        matchers);
+  }
+};
 
 /**
  * @return true if ONE OF the matchers returns true
  */
 template <class... Matchers>
-constexpr auto AnyOf(Matchers... m) noexcept {
-  return
-      [matchers = std::make_tuple(std::move(m)...)](const auto&... v) -> bool {
-        return std::apply(
-            [&](const auto&... _m) { return (::IsMatching(_m, v...) || ...); },
-            matchers);
-      };
-}
+struct AnyOf {
+  std::tuple<Matchers...> matchers;
+  static_assert(sizeof...(Matchers) > 0);
+
+  constexpr explicit AnyOf(Matchers... m) noexcept
+      : matchers(std::move(m)...) {}
+
+  constexpr auto operator()(const auto&... v) const noexcept -> bool {
+    return std::apply(
+        [&](const auto&... m) -> bool {
+          return (atb::IsMatching(m, v...) || ...);
+        },
+        matchers);
+  }
+};
 
 // FILTER ARGS COMPOSITE MATCHERS //////////////////////////////////////////////
 
 /**
  * @return m(v[i]...) by selecting the Ith argument(s) from v...
  */
+template <class Matcher, std::size_t... I>
+struct OnArgsMatcher {
+  Matcher matcher;
+
+  constexpr auto operator()(auto&&... v) const noexcept -> bool {
+    auto values = std::forward_as_tuple(ATB_FWD(v)...);
+    return atb::IsMatching(matcher, std::get<I>(values)...);
+  }
+};
+
 template <std::size_t... I, class Matcher>
-constexpr auto OnArgs(Matcher m) noexcept {
-  return [m = std::move(m)](const auto&... v) -> bool {
-    auto values = std::tie(v...);
-    return ::IsMatching(m, std::get<I>(values)...);
-  };
+constexpr auto OnArgs(Matcher&& m)
+    -> OnArgsMatcher<std::remove_cvref_t<Matcher>, I...> {
+  return {ATB_FWD(m)};
 }
 
 /**
  * @return true if m returns true for ALL the arguments individually
  */
 template <class Matcher>
-constexpr auto AllArgs(Matcher m) noexcept {
-  return [m = std::move(m)](const auto&... v) -> bool {
-    return (::IsMatching(m, v) && ...);
-  };
-}
+struct AllArgs {
+  Matcher matcher;
+
+  constexpr auto operator()(auto&&... v) const noexcept -> bool {
+    return (atb::IsMatching(matcher, ATB_FWD(v)) && ...);
+  }
+};
 
 /**
  * @return true if m returns true for at least ONE of the arguments
  */
 template <class Matcher>
-constexpr auto AnyArgs(Matcher m) noexcept {
-  return [m = std::move(m)](const auto&... v) -> bool {
-    return (::IsMatching(m, v) || ...);
-  };
-}
+struct AnyArgs {
+  Matcher matcher;
+
+  constexpr auto operator()(auto&&... v) const noexcept -> bool {
+    return (atb::IsMatching(matcher, ATB_FWD(v)) || ...);
+  }
+};
 
 // TYPE ERASED MATCHER /////////////////////////////////////////////////////////
 
 namespace details {
+
+/// TODO
+template <class T>
+concept UnInitializedPolicy = requires(T policy) {
+  { policy.Assert() } -> std::convertible_to<bool>;
+};
 
 /**
  * @brief Type erased polymorphic Matcher for a fix set of input arguments
@@ -333,18 +328,18 @@ namespace details {
  * m = Always<false>();
  * assert(m.IsInitialized() == true);
  *
- * assert(::IsMatching(m, 42, 24) == false);
- * assert(::IsMatching(m, -42, 0) == false);
+ * assert(atb::IsMatching(m, 42, 24) == false);
+ * assert(atb::IsMatching(m, -42, 0) == false);
  *
  * // Change the matcher dynamically
  * m = AllArgs(Eq(10));
- * assert(::IsMatching(m, -42, 0) == false);
- * assert(::IsMatching(m, 10, 10) == true);
+ * assert(atb::IsMatching(m, -42, 0) == false);
+ * assert(atb::IsMatching(m, 10, 10) == true);
  *
  * m = All(AllArgs(Gt(0)), OnArgs<0>(Eq(20)));
- * assert(::IsMatching(m, 20, -10) == false);
- * assert(::IsMatching(m, 19, 10) == false);
- * assert(::IsMatching(m, 20, 10) == true);
+ * assert(atb::IsMatching(m, 20, -10) == false);
+ * assert(atb::IsMatching(m, 19, 10) == false);
+ * assert(atb::IsMatching(m, 20, 10) == true);
  *
  * std::vector<AnyMatcher<int>> matchers;
  * matchers.emplace_back(Ge(10));
@@ -366,41 +361,41 @@ namespace details {
  * @tparam UninitializedPolicy Policy use when the AnyMatcher is uninitialized
  * @tparam ...Args Arguments type for the given matcher
  */
-template <class UninitializedPolicy, class... Args>
+template <UnInitializedPolicy Policy, class... Args>
 class AnyMatcherImpl final {
   /// The virtual interface defining a Matcher
   struct Interface;
 
   /// Wrapper class wrapping any matcher
-  template <class Matcher>
+  template <MatcherFor<Args...> Matcher>
   struct Wrapper;
 
   /// Opaque ptr pointing to the matcher interface
-  std::unique_ptr<Interface> m_interface;
+  std::unique_ptr<Interface> m_itf;
 
  public:
   /**
    * @brief Default ctor (not initialized)
    */
-  constexpr AnyMatcherImpl() noexcept : m_interface(nullptr) {}
+  constexpr AnyMatcherImpl() noexcept : m_itf(nullptr) {}
 
   /**
    * @brief Copy ctor: clone the underlying interface
    */
   constexpr AnyMatcherImpl(const AnyMatcherImpl& other)
-      : m_interface(other.m_interface->Clone()) {}
+      : m_itf(other.m_itf != nullptr ? other.m_itf->Clone() : nullptr) {}
 
   /**
    * @brief Move ctor: move the underlying interface
    */
   constexpr AnyMatcherImpl(AnyMatcherImpl&& other) noexcept
-      : m_interface(std::move(other.m_interface)) {}
+      : m_itf(std::move(other.m_itf)) {}
 
   /**
    * @brief Copy assignment: clone the underlying interface
    */
   constexpr auto operator=(const AnyMatcherImpl& other) -> AnyMatcherImpl& {
-    m_interface = other.m_interface->Clone();
+    m_itf = other.m_itf->Clone();
     return *this;
   }
 
@@ -408,7 +403,7 @@ class AnyMatcherImpl final {
    * @brief Move assignment: move the underlying interface
    */
   constexpr auto operator=(AnyMatcherImpl&& other) noexcept -> AnyMatcherImpl& {
-    m_interface = std::move(other.m_interface);
+    m_itf = std::move(other.m_itf);
     return *this;
   }
 
@@ -423,15 +418,11 @@ class AnyMatcherImpl final {
    * @param[in] m Any matcher defining a 'matcher' interface based on the
    *              MatcherTraits
    */
-  template <
-      class Matcher,
-      std::enable_if_t<!std::is_same_v<AnyMatcherImpl, std::decay_t<Matcher>>,
-                       bool> = true>
-  constexpr explicit AnyMatcherImpl(Matcher&& m)
-      : m_interface(std::make_unique<Wrapper<std::decay_t<Matcher>>>(
-            std::forward<Matcher>(m))) {
-    MatcherTraits<std::decay_t<Matcher>, Args...>::AssertWhenInvalid();
-  }
+  template <class M>
+    requires MatcherFor<M, Args...> &&
+             (!std::same_as<std::remove_cvref_t<M>, AnyMatcherImpl>)
+  constexpr explicit AnyMatcherImpl(M&& m)
+      : m_itf(std::make_unique<Wrapper<std::remove_cvref_t<M>>>(ATB_FWD(m))) {}
 
   /**
    * @brief Re-Assign the AnyMatcher to point to an other matcher
@@ -439,12 +430,11 @@ class AnyMatcherImpl final {
    * @param[in] m Any matcher defining a 'matcher' interface based on the
    *              MatcherTraits
    */
-  template <
-      class Matcher,
-      std::enable_if_t<!std::is_same_v<AnyMatcherImpl, std::decay_t<Matcher>>,
-                       bool> = true>
-  constexpr auto operator=(Matcher&& m) -> AnyMatcherImpl& {
-    *this = AnyMatcherImpl(std::forward<Matcher>(m));
+  template <class M>
+    requires MatcherFor<M, Args...> &&
+             (!std::same_as<std::remove_cvref_t<M>, AnyMatcherImpl>)
+  constexpr auto operator=(M&& m) -> AnyMatcherImpl& {
+    *this = AnyMatcherImpl(ATB_FWD(m));
     return *this;
   }
 
@@ -452,9 +442,7 @@ class AnyMatcherImpl final {
    * @return true whenever the current matcher has be initialized/assigned
    *         (i.e. IsMatching can be called safely). False otherwise.
    */
-  constexpr auto IsInitialized() const -> bool {
-    return m_interface != nullptr;
-  }
+  constexpr auto IsInitialized() const -> bool { return m_itf != nullptr; }
 
   /**
    * @brief Mandatory matcher `IsMatching(Args...) -> bool` interface.
@@ -463,33 +451,31 @@ class AnyMatcherImpl final {
    *         When the AnyMatcher is NOT ASSIGNED (uninitialized), the behavior
    *         depends on the AssertPolicy selected.
    */
-  constexpr auto IsMatching(const Args&... args) const -> bool {
+  constexpr auto IsMatching(Args... args) const -> bool {
     if (!IsInitialized()) {
-      return UninitializedPolicy::Assert();
+      return Policy{}.Assert();
     }
 
-    return m_interface->IsMatching(args...);
+    return m_itf->IsMatching(ATB_FWD(args)...);
   }
 
  private:
   struct Interface {
     virtual ~Interface() noexcept = default;
     virtual auto Clone() const -> std::unique_ptr<Interface> = 0;
-    virtual auto IsMatching(const Args&... args) const -> bool = 0;
+    virtual auto IsMatching(Args... args) const -> bool = 0;
   };
 
-  template <class Matcher>
+  template <MatcherFor<Args...> Matcher>
   struct Wrapper final : public Interface {
-    template <class... T>
-    constexpr explicit Wrapper(T&&... args)
-        : m_matcher(std::forward<T>(args)...) {}
+    constexpr explicit Wrapper(auto&&... args) : m_matcher(ATB_FWD(args)...) {}
 
     auto Clone() const -> std::unique_ptr<Interface> override {
       return std::make_unique<Wrapper>(m_matcher);
     }
 
-    auto IsMatching(const Args&... args) const -> bool override {
-      return ::IsMatching(m_matcher, args...);
+    auto IsMatching(Args... args) const -> bool override {
+      return atb::IsMatching(m_matcher, ATB_FWD(args)...);
     }
 
    private:

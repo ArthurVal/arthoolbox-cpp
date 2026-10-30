@@ -58,13 +58,13 @@ TEST(AtbMatchersTest, IsMatching) {
 
   ::testing::StrictMock<CallableMock<bool, int>> only_call;
   EXPECT_CALL(only_call, Call(3)).Times(1).WillOnce(Return(true));
-  EXPECT_TRUE(::IsMatching(only_call, 3));
+  EXPECT_TRUE(atb::IsMatching(only_call, 3));
 
   ::testing::StrictMock<MatcherFreeFunctionMock<int>> call_and_free_function;
   EXPECT_CALL(call_and_free_function, FreeFunctionCall(4))
       .Times(1)
       .WillOnce(Return(false));
-  EXPECT_FALSE(::IsMatching(call_and_free_function, 4));
+  EXPECT_FALSE(atb::IsMatching(call_and_free_function, 4));
 
   ::testing::StrictMock<MatcherMethodMock<int>>
       call_and_free_function_and_method;
@@ -72,14 +72,15 @@ TEST(AtbMatchersTest, IsMatching) {
       .Times(2)
       .WillOnce(Return(true))
       .WillOnce(Return(false));
-  EXPECT_TRUE(::IsMatching(call_and_free_function_and_method, 5));
-  EXPECT_FALSE(::IsMatching(&MatcherMethodMock<int>::IsMatching,
-                            call_and_free_function_and_method, 5));
+  EXPECT_TRUE(atb::IsMatching(call_and_free_function_and_method, 5));
+  EXPECT_FALSE(atb::IsMatching(&MatcherMethodMock<int>::IsMatching,
+                               call_and_free_function_and_method, 5));
 }
 
 TEST(AtbMatchersTest, Always) {
-  EXPECT_TRUE(::IsMatching(Always<true>(), 1, "Foo", 3985809135u, 124.546654));
-  EXPECT_FALSE(::IsMatching(Always<false>(), 1, 3985809135u, 124.546654));
+  EXPECT_TRUE(
+      atb::IsMatching(Always<true>(), 1, "Foo", 3985809135u, 124.546654));
+  EXPECT_FALSE(atb::IsMatching(Always<false>(), 1, 3985809135u, 124.546654));
 }
 
 TEST(AtbMatchersTest, Eq) {
@@ -90,25 +91,25 @@ TEST(AtbMatchersTest, Eq) {
       .Times(1)
       .WillOnce(Return(true))
       .RetiresOnSaturation();
-  EXPECT_TRUE(::IsMatching(Eq(3), mock));
+  EXPECT_TRUE(atb::IsMatching(Eq(3), mock));
 
   EXPECT_CALL(mock, Eq(4, ArgSide::Right))
       .Times(1)
       .WillOnce(Return(false))
       .RetiresOnSaturation();
-  EXPECT_FALSE(::IsMatching(Eq(4), mock));
+  EXPECT_FALSE(atb::IsMatching(Eq(4), mock));
 
   EXPECT_CALL(mock, Eq(5, ArgSide::Left))
       .Times(1)
       .WillOnce(Return(true))
       .RetiresOnSaturation();
-  EXPECT_TRUE(::IsMatching(atb::Eq(std::ref(mock)), 5));
+  EXPECT_TRUE(atb::IsMatching(atb::Eq(std::ref(mock)), 5));
 
   EXPECT_CALL(mock, Eq(6, ArgSide::Left))
       .Times(1)
       .WillOnce(Return(false))
       .RetiresOnSaturation();
-  EXPECT_FALSE(::IsMatching(atb::Eq(std::ref(mock)), 6));
+  EXPECT_FALSE(atb::IsMatching(atb::Eq(std::ref(mock)), 6));
 }
 
 TEST(AtbMatchersTest, Ne) {
@@ -119,25 +120,25 @@ TEST(AtbMatchersTest, Ne) {
       .Times(1)
       .WillOnce(Return(true))
       .RetiresOnSaturation();
-  EXPECT_TRUE(::IsMatching(Ne(3), mock));
+  EXPECT_TRUE(atb::IsMatching(Ne(3), mock));
 
   EXPECT_CALL(mock, Ne(4, ArgSide::Right))
       .Times(1)
       .WillOnce(Return(false))
       .RetiresOnSaturation();
-  EXPECT_FALSE(::IsMatching(Ne(4), mock));
+  EXPECT_FALSE(atb::IsMatching(Ne(4), mock));
 
   EXPECT_CALL(mock, Ne(5, ArgSide::Left))
       .Times(1)
       .WillOnce(Return(true))
       .RetiresOnSaturation();
-  EXPECT_TRUE(::IsMatching(atb::Ne(std::ref(mock)), 5));
+  EXPECT_TRUE(atb::IsMatching(atb::Ne(std::ref(mock)), 5));
 
   EXPECT_CALL(mock, Ne(6, ArgSide::Left))
       .Times(1)
       .WillOnce(Return(false))
       .RetiresOnSaturation();
-  EXPECT_FALSE(::IsMatching(atb::Ne(std::ref(mock)), 6));
+  EXPECT_FALSE(atb::IsMatching(atb::Ne(std::ref(mock)), 6));
 }
 
 TEST(AtbMatchersTest, Ge) {
@@ -168,16 +169,16 @@ TEST(AtbMatchersTest, Gt) {
       .WillOnce(Return(true))
       .WillOnce(Return(false))
       .RetiresOnSaturation();
-  EXPECT_TRUE(::IsMatching(Gt(3), mock));
-  EXPECT_FALSE(::IsMatching(Gt(3), mock));
+  EXPECT_TRUE(atb::IsMatching(Gt(3), mock));
+  EXPECT_FALSE(atb::IsMatching(Gt(3), mock));
 
   EXPECT_CALL(mock, Gt(4, ArgSide::Left))
       .Times(2)
       .WillOnce(Return(true))
       .WillOnce(Return(false))
       .RetiresOnSaturation();
-  EXPECT_TRUE(::IsMatching(atb::Gt(std::ref(mock)), 4));
-  EXPECT_FALSE(::IsMatching(atb::Gt(std::ref(mock)), 4));
+  EXPECT_TRUE(atb::IsMatching(atb::Gt(std::ref(mock)), 4));
+  EXPECT_FALSE(atb::IsMatching(atb::Gt(std::ref(mock)), 4));
 }
 
 TEST(AtbMatchersTest, Le) {
@@ -188,16 +189,16 @@ TEST(AtbMatchersTest, Le) {
       .WillOnce(Return(true))
       .WillOnce(Return(false))
       .RetiresOnSaturation();
-  EXPECT_TRUE(::IsMatching(Le(3), mock));
-  EXPECT_FALSE(::IsMatching(Le(3), mock));
+  EXPECT_TRUE(atb::IsMatching(Le(3), mock));
+  EXPECT_FALSE(atb::IsMatching(Le(3), mock));
 
   EXPECT_CALL(mock, Le(4, ArgSide::Left))
       .Times(2)
       .WillOnce(Return(true))
       .WillOnce(Return(false))
       .RetiresOnSaturation();
-  EXPECT_TRUE(::IsMatching(atb::Le(std::ref(mock)), 4));
-  EXPECT_FALSE(::IsMatching(atb::Le(std::ref(mock)), 4));
+  EXPECT_TRUE(atb::IsMatching(atb::Le(std::ref(mock)), 4));
+  EXPECT_FALSE(atb::IsMatching(atb::Le(std::ref(mock)), 4));
 }
 
 TEST(AtbMatchersTest, Lt) {
@@ -208,16 +209,16 @@ TEST(AtbMatchersTest, Lt) {
       .WillOnce(Return(true))
       .WillOnce(Return(false))
       .RetiresOnSaturation();
-  EXPECT_TRUE(::IsMatching(Lt(3), mock));
-  EXPECT_FALSE(::IsMatching(Lt(3), mock));
+  EXPECT_TRUE(atb::IsMatching(Lt(3), mock));
+  EXPECT_FALSE(atb::IsMatching(Lt(3), mock));
 
   EXPECT_CALL(mock, Lt(4, ArgSide::Left))
       .Times(2)
       .WillOnce(Return(true))
       .WillOnce(Return(false))
       .RetiresOnSaturation();
-  EXPECT_TRUE(::IsMatching(atb::Lt(std::ref(mock)), 4));
-  EXPECT_FALSE(::IsMatching(atb::Lt(std::ref(mock)), 4));
+  EXPECT_TRUE(atb::IsMatching(atb::Lt(std::ref(mock)), 4));
+  EXPECT_FALSE(atb::IsMatching(atb::Lt(std::ref(mock)), 4));
 }
 
 TEST(AtbMatchersTest, Near) {
@@ -238,8 +239,8 @@ TEST(AtbMatchersTest, Not) {
       .WillOnce(Return(true))
       .WillOnce(Return(false))
       .RetiresOnSaturation();
-  EXPECT_FALSE(::IsMatching(atb::Not(std::ref(mock)), 3));
-  EXPECT_TRUE(::IsMatching(atb::Not(std::ref(mock)), 3));
+  EXPECT_FALSE(atb::IsMatching(atb::Not(std::ref(mock)), 3));
+  EXPECT_TRUE(atb::IsMatching(atb::Not(std::ref(mock)), 3));
 }
 
 TEST(AtbMatchersTest, AllOf) {
@@ -254,9 +255,9 @@ TEST(AtbMatchersTest, AllOf) {
         .WillOnce(Return(true))
         .WillOnce(Return(true))
         .RetiresOnSaturation();
-    EXPECT_TRUE(::IsMatching(atb::AllOf(std::ref(mock), std::ref(mock),
-                                        std::ref(mock), std::ref(mock)),
-                             "Foo"sv));
+    EXPECT_TRUE(atb::IsMatching(atb::AllOf(std::ref(mock), std::ref(mock),
+                                           std::ref(mock), std::ref(mock)),
+                                "Foo"sv));
 
     EXPECT_CALL(mock, Call("Bar"))
         .Times(3)
@@ -264,17 +265,17 @@ TEST(AtbMatchersTest, AllOf) {
         .WillOnce(Return(true))
         .WillOnce(Return(false))
         .RetiresOnSaturation();
-    EXPECT_FALSE(::IsMatching(atb::AllOf(std::ref(mock), std::ref(mock),
-                                         std::ref(mock), std::ref(mock)),
-                              "Bar"sv));
+    EXPECT_FALSE(atb::IsMatching(atb::AllOf(std::ref(mock), std::ref(mock),
+                                            std::ref(mock), std::ref(mock)),
+                                 "Bar"sv));
 
     EXPECT_CALL(mock, Call("Baz"))
         .Times(1)
         .WillOnce(Return(false))
         .RetiresOnSaturation();
-    EXPECT_FALSE(::IsMatching(atb::AllOf(std::ref(mock), std::ref(mock),
-                                         std::ref(mock), std::ref(mock)),
-                              "Baz"sv));
+    EXPECT_FALSE(atb::IsMatching(atb::AllOf(std::ref(mock), std::ref(mock),
+                                            std::ref(mock), std::ref(mock)),
+                                 "Baz"sv));
   }
 
   {
@@ -288,9 +289,9 @@ TEST(AtbMatchersTest, AllOf) {
         .WillOnce(Return(true))
         .WillOnce(Return(false))
         .RetiresOnSaturation();
-    EXPECT_FALSE(::IsMatching(atb::AllOf(std::ref(mock), std::ref(mock),
-                                         std::ref(mock), std::ref(mock)),
-                              "Foo"sv, 42));
+    EXPECT_FALSE(atb::IsMatching(atb::AllOf(std::ref(mock), std::ref(mock),
+                                            std::ref(mock), std::ref(mock)),
+                                 "Foo"sv, 42));
   }
 }
 
@@ -303,9 +304,9 @@ TEST(AtbMatchersTest, AnyOf) {
         .Times(1)
         .WillOnce(Return(true))
         .RetiresOnSaturation();
-    EXPECT_TRUE(::IsMatching(atb::AnyOf(std::ref(mock), std::ref(mock),
-                                        std::ref(mock), std::ref(mock)),
-                             "Foo"sv));
+    EXPECT_TRUE(atb::IsMatching(atb::AnyOf(std::ref(mock), std::ref(mock),
+                                           std::ref(mock), std::ref(mock)),
+                                "Foo"sv));
 
     EXPECT_CALL(mock, Call("Bar"))
         .Times(3)
@@ -313,9 +314,9 @@ TEST(AtbMatchersTest, AnyOf) {
         .WillOnce(Return(false))
         .WillOnce(Return(true))
         .RetiresOnSaturation();
-    EXPECT_TRUE(::IsMatching(atb::AnyOf(std::ref(mock), std::ref(mock),
-                                        std::ref(mock), std::ref(mock)),
-                             "Bar"sv));
+    EXPECT_TRUE(atb::IsMatching(atb::AnyOf(std::ref(mock), std::ref(mock),
+                                           std::ref(mock), std::ref(mock)),
+                                "Bar"sv));
 
     EXPECT_CALL(mock, Call("Baz"))
         .Times(4)
@@ -324,9 +325,9 @@ TEST(AtbMatchersTest, AnyOf) {
         .WillOnce(Return(false))
         .WillOnce(Return(false))
         .RetiresOnSaturation();
-    EXPECT_FALSE(::IsMatching(atb::AnyOf(std::ref(mock), std::ref(mock),
-                                         std::ref(mock), std::ref(mock)),
-                              "Baz"sv));
+    EXPECT_FALSE(atb::IsMatching(atb::AnyOf(std::ref(mock), std::ref(mock),
+                                            std::ref(mock), std::ref(mock)),
+                                 "Baz"sv));
   }
 
   {
@@ -340,9 +341,9 @@ TEST(AtbMatchersTest, AnyOf) {
         .WillOnce(Return(false))
         .WillOnce(Return(true))
         .RetiresOnSaturation();
-    EXPECT_TRUE(::IsMatching(atb::AnyOf(std::ref(mock), std::ref(mock),
-                                        std::ref(mock), std::ref(mock)),
-                             "Foo"sv, 42));
+    EXPECT_TRUE(atb::IsMatching(atb::AnyOf(std::ref(mock), std::ref(mock),
+                                           std::ref(mock), std::ref(mock)),
+                                "Foo"sv, 42));
   }
 }
 
@@ -357,11 +358,14 @@ TEST(AtbMatchersTest, OnArgs) {
       .WillOnce(Return(true))
       .RetiresOnSaturation();
 
-  EXPECT_TRUE(::IsMatching(OnArgs<0>(std::ref(mock)), "Foo"sv, 1, 4, "Bar"sv));
-  EXPECT_FALSE(::IsMatching(OnArgs<3>(std::ref(mock)), 1, 4, "Bar"sv, "Foo"sv));
-  EXPECT_TRUE(::IsMatching(OnArgs<1>(std::ref(mock)), 1, "Foo"sv, 4, "Bar"sv));
+  EXPECT_TRUE(
+      atb::IsMatching(OnArgs<0>(std::ref(mock)), "Foo"sv, 1, 4, "Bar"sv));
+  EXPECT_FALSE(
+      atb::IsMatching(OnArgs<3>(std::ref(mock)), 1, 4, "Bar"sv, "Foo"sv));
+  EXPECT_TRUE(
+      atb::IsMatching(OnArgs<1>(std::ref(mock)), 1, "Foo"sv, 4, "Bar"sv));
 
-  EXPECT_TRUE(::IsMatching(
+  EXPECT_TRUE(atb::IsMatching(
       AllOf(OnArgs<0>(Ge(0)), OnArgs<2>(Eq(4)),
             OnArgs<1, 3>([](auto... s) { return ((s.size() == 3) && ...); })),
       1, "Foo"sv, 4, "Bar"sv));
@@ -383,7 +387,8 @@ TEST(AtbMatchersTest, AllArgs) {
         .WillOnce(Return(true))
         .RetiresOnSaturation();
 
-    EXPECT_TRUE(::IsMatching(atb::AllArgs(std::ref(mock)), "Foo"sv, "Bar"sv));
+    EXPECT_TRUE(
+        atb::IsMatching(atb::AllArgs(std::ref(mock)), "Foo"sv, "Bar"sv));
   }
 
   {
@@ -398,7 +403,8 @@ TEST(AtbMatchersTest, AllArgs) {
         .WillOnce(Return(false))
         .RetiresOnSaturation();
 
-    EXPECT_FALSE(::IsMatching(atb::AllArgs(std::ref(mock)), "Foo"sv, "Bar"sv));
+    EXPECT_FALSE(
+        atb::IsMatching(atb::AllArgs(std::ref(mock)), "Foo"sv, "Bar"sv));
   }
 
   {
@@ -408,7 +414,8 @@ TEST(AtbMatchersTest, AllArgs) {
         .WillOnce(Return(false))
         .RetiresOnSaturation();
 
-    EXPECT_FALSE(::IsMatching(atb::AllArgs(std::ref(mock)), "Foo"sv, "Bar"sv));
+    EXPECT_FALSE(
+        atb::IsMatching(atb::AllArgs(std::ref(mock)), "Foo"sv, "Bar"sv));
   }
 }
 
@@ -423,7 +430,7 @@ TEST(AtbMatchersTest, AnyArgs) {
         .WillOnce(Return(true))
         .RetiresOnSaturation();
 
-    EXPECT_TRUE(::IsMatching(AnyArgs(std::ref(mock)), "Foo"sv, "Bar"sv));
+    EXPECT_TRUE(atb::IsMatching(AnyArgs(std::ref(mock)), "Foo"sv, "Bar"sv));
   }
 
   {
@@ -438,7 +445,7 @@ TEST(AtbMatchersTest, AnyArgs) {
         .WillOnce(Return(true))
         .RetiresOnSaturation();
 
-    EXPECT_TRUE(::IsMatching(AnyArgs(std::ref(mock)), "Foo"sv, "Bar"sv));
+    EXPECT_TRUE(atb::IsMatching(AnyArgs(std::ref(mock)), "Foo"sv, "Bar"sv));
   }
 
   {
@@ -453,7 +460,7 @@ TEST(AtbMatchersTest, AnyArgs) {
         .WillOnce(Return(false))
         .RetiresOnSaturation();
 
-    EXPECT_FALSE(::IsMatching(AnyArgs(std::ref(mock)), "Foo"sv, "Bar"sv));
+    EXPECT_FALSE(atb::IsMatching(AnyArgs(std::ref(mock)), "Foo"sv, "Bar"sv));
   }
 }
 
@@ -462,20 +469,20 @@ TEST(AtbMatchersTest, AnyMatcher) {
 
   matcher_t any;
   EXPECT_FALSE(any.IsInitialized());
-  EXPECT_THROW(::IsMatching(any, 1, "Coucou"sv), std::runtime_error);
+  EXPECT_THROW(atb::IsMatching(any, 1, "Coucou"sv), std::runtime_error);
 
   any = Always<false>();
   EXPECT_TRUE(any.IsInitialized());
-  EXPECT_FALSE(::IsMatching(any, 1, "Coucou"sv));
+  EXPECT_FALSE(atb::IsMatching(any, 1, "Coucou"sv));
 
   any = Always<true>();
   EXPECT_TRUE(any.IsInitialized());
-  EXPECT_TRUE(::IsMatching(any, 42, "Chocolatine"sv));
+  EXPECT_TRUE(atb::IsMatching(any, 42, "Chocolatine"sv));
 
   any = AllOf(OnArgs<0>(Eq(10)), OnArgs<1>(Eq("Toto"sv)));
   EXPECT_TRUE(any.IsInitialized());
-  EXPECT_TRUE(::IsMatching(any, 10, "Toto"sv));
-  EXPECT_FALSE(::IsMatching(any, 10, "Tata"sv));
+  EXPECT_TRUE(atb::IsMatching(any, 10, "Toto"sv));
+  EXPECT_FALSE(atb::IsMatching(any, 10, "Tata"sv));
 
   matcher_t other;
   EXPECT_FALSE(other.IsInitialized());
@@ -490,23 +497,23 @@ TEST(AtbMatchersTest, AnyMatcher) {
            static_cast<const matcher_t&>(any),
            static_cast<const matcher_t&>(other),
        }) {
-    EXPECT_TRUE(::IsMatching(m, 10, "Toto"sv));
-    EXPECT_FALSE(::IsMatching(m, 10, "Tata"sv));
+    EXPECT_TRUE(atb::IsMatching(m, 10, "Toto"sv));
+    EXPECT_FALSE(atb::IsMatching(m, 10, "Tata"sv));
   }
 
   // Move
   other = std::move(any);
   EXPECT_FALSE(any.IsInitialized());
   EXPECT_TRUE(other.IsInitialized());
-  EXPECT_TRUE(::IsMatching(other, 10, "Toto"sv));
-  EXPECT_FALSE(::IsMatching(other, 10, "Tata"sv));
+  EXPECT_TRUE(atb::IsMatching(other, 10, "Toto"sv));
+  EXPECT_FALSE(atb::IsMatching(other, 10, "Tata"sv));
 
   // Showcase container feature of type erased
   std::vector<AnyMatcher<int>> matchers;
   matchers.emplace_back(Always<true>());
   matchers.emplace_back(Ge(20));
   matchers.emplace_back(Lt(100));
-  for (const auto& m : matchers) EXPECT_TRUE(::IsMatching(m, 42));
+  for (const auto& m : matchers) EXPECT_TRUE(atb::IsMatching(m, 42));
 }
 
 TEST(AtbMatchersTest, UnsafeAnyMatcher) {
@@ -515,13 +522,13 @@ TEST(AtbMatchersTest, UnsafeAnyMatcher) {
 
   unsafe = Ge(500);
   EXPECT_TRUE(unsafe.IsInitialized());
-  EXPECT_FALSE(::IsMatching(unsafe, 10));
-  EXPECT_TRUE(::IsMatching(unsafe, 10000));
+  EXPECT_FALSE(atb::IsMatching(unsafe, 10));
+  EXPECT_TRUE(atb::IsMatching(unsafe, 10000));
 
   unsafe = Le(500);
   EXPECT_TRUE(unsafe.IsInitialized());
-  EXPECT_TRUE(::IsMatching(unsafe, 10));
-  EXPECT_FALSE(::IsMatching(unsafe, 10000));
+  EXPECT_TRUE(atb::IsMatching(unsafe, 10));
+  EXPECT_FALSE(atb::IsMatching(unsafe, 10000));
 
   UnsafeAnyMatcher<int> other;
   EXPECT_FALSE(other.IsInitialized());
@@ -536,8 +543,8 @@ TEST(AtbMatchersTest, UnsafeAnyMatcher) {
            static_cast<const UnsafeAnyMatcher<int>&>(unsafe),
            static_cast<const UnsafeAnyMatcher<int>&>(other),
        }) {
-    EXPECT_FALSE(::IsMatching(m, 1234567));
-    EXPECT_TRUE(::IsMatching(m, 10));
+    EXPECT_FALSE(atb::IsMatching(m, 1234567));
+    EXPECT_TRUE(atb::IsMatching(m, 10));
   }
 
   // Move
@@ -545,15 +552,15 @@ TEST(AtbMatchersTest, UnsafeAnyMatcher) {
   EXPECT_FALSE(unsafe.IsInitialized());
 
   EXPECT_TRUE(other.IsInitialized());
-  EXPECT_FALSE(::IsMatching(other, 5000));
-  EXPECT_TRUE(::IsMatching(other, 10));
+  EXPECT_FALSE(atb::IsMatching(other, 5000));
+  EXPECT_TRUE(atb::IsMatching(other, 10));
 }
 
 TEST(AtbMatchersDeathTest, UnsafeAnyMatcher) {
   UnsafeAnyMatcher<int> unsafe;
   EXPECT_FALSE(unsafe.IsInitialized());
   EXPECT_DEBUG_DEATH(
-      { EXPECT_FALSE(::IsMatching(unsafe, 42)); }, "AnyMatcher is empty");
+      { EXPECT_FALSE(atb::IsMatching(unsafe, 42)); }, "AnyMatcher is empty");
 }
 
 }  // namespace

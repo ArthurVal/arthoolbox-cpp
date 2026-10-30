@@ -365,7 +365,7 @@ struct StrSwitch final {
           m_res.emplace(std::forward<T>(value));
         }
       } else {
-        if (::IsMatching(std::forward<Matcher>(m), m_str)) {
+        if (atb::IsMatching(std::forward<Matcher>(m), m_str)) {
           m_res.emplace(std::forward<T>(value));
         }
       }

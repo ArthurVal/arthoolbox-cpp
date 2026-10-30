@@ -3,8 +3,9 @@
 #include <concepts>
 #include <type_traits>
 
-
+#ifndef ATB_FWD
 #define ATB_FWD(v) std::forward<decltype(v)>(v)
+#endif
 
 namespace atb {
 
@@ -49,7 +50,6 @@ struct HasTrait : details::HasTraitImpl<void, Trait, Args...> {};
 
 template <template <class...> class Trait, class... Args>
 constexpr bool HasTrait_v = HasTrait<Trait, Args...>::value;
-
 
 /// Meta programmation use to check if T is a templated instanciation of U<...>
 template <class T, template <class...> class U>
