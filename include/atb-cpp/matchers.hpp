@@ -327,7 +327,8 @@ struct ReduceArgs {
 
 namespace details {
 
-/// TODO
+/// Checks that the give type \a T matches with the UnInitializedPolicy
+/// interface
 template <class T>
 concept UnInitializedPolicy = requires(T policy) {
   { policy.Assert() } -> std::convertible_to<bool>;
@@ -414,26 +415,22 @@ class AnyMatcherImpl final {
       : m_itf(other.m_itf != nullptr ? other.m_itf->Clone() : nullptr) {}
 
   /**
-   * @brief Move ctor: move the underlying interface
-   */
-  constexpr AnyMatcherImpl(AnyMatcherImpl&& other) noexcept
-      : m_itf(std::move(other.m_itf)) {}
-
-  /**
    * @brief Copy assignment: clone the underlying interface
    */
-  constexpr auto operator=(const AnyMatcherImpl& other) -> AnyMatcherImpl& {
-    m_itf = other.m_itf->Clone();
+  constexpr AnyMatcherImpl& operator=(const AnyMatcherImpl& other) {
+    m_itf = (other.m_itf != nullptr ? other.m_itf->Clone() : nullptr);
     return *this;
   }
+
+  /**
+   * @brief Move ctor: move the underlying interface
+   */
+  constexpr AnyMatcherImpl(AnyMatcherImpl&&) noexcept = default;
 
   /**
    * @brief Move assignment: move the underlying interface
    */
-  constexpr auto operator=(AnyMatcherImpl&& other) noexcept -> AnyMatcherImpl& {
-    m_itf = std::move(other.m_itf);
-    return *this;
-  }
+  constexpr AnyMatcherImpl& operator=(AnyMatcherImpl&&) noexcept = default;
 
   /**
    * @brief Dtor
@@ -461,7 +458,7 @@ class AnyMatcherImpl final {
   template <class M>
     requires MatcherFor<M, Args...> &&
              (!std::same_as<std::remove_cvref_t<M>, AnyMatcherImpl>)
-  constexpr auto operator=(M&& m) -> AnyMatcherImpl& {
+  constexpr AnyMatcherImpl& operator=(M&& m) {
     *this = AnyMatcherImpl(ATB_FWD(m));
     return *this;
   }
@@ -484,7 +481,7 @@ class AnyMatcherImpl final {
       return Policy{}.Assert();
     }
 
-    return m_itf->IsMatching(ATB_FWD(args)...);
+    return m_itf->IsMatching(args...);
   }
 
  private:
@@ -503,7 +500,7 @@ class AnyMatcherImpl final {
     }
 
     auto IsMatching(Args... args) const -> bool override {
-      return atb::IsMatching(m_matcher, ATB_FWD(args)...);
+      return atb::IsMatching(m_matcher, args...);
     }
 
    private:
