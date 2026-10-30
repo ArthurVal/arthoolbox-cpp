@@ -8,7 +8,7 @@
 #include <string>
 #include <string_view>
 
-#include "atb-cpp/matchers.hpp"
+#include "atb-cpp/matchers/string.hpp"
 
 namespace atb {
 
@@ -181,146 +181,6 @@ inline auto StrCat(std::initializer_list<std::string_view> strings)
   return std::nullopt;
 }
 
-// STRINGS MATCHERS ////////////////////////////////////////////////////////////
-
-/**
- * @return true whenever the given \a str starts by \a prefix
- *
- * @important Since \a prefix is a string_view the underlying string-like
- *            referenced NEEDS to outlive the matcher lifetime (i.e. do not
- *            give a rvalue of a std::string).
- */
-constexpr auto StrStartsWith(std::string_view prefix) noexcept {
-  return [=](std::string_view str) noexcept -> bool {
-    return (str.substr(0, prefix.size()) == prefix);
-  };
-}
-
-/**
- * @return true whenever the given \a str ends by \a suffix
- *
- * @important Since \a suffix is a string_view the underlying string-like
- *            referenced NEEDS to outlive the matcher lifetime (i.e. do not
- *            give a rvalue of a std::string).
- */
-constexpr auto StrEndsWith(std::string_view suffix) noexcept {
-  return [=](std::string_view str) noexcept -> bool {
-    return (str.size() >= suffix.size()) &&
-           (str.substr(str.size() - suffix.size(), suffix.size()) == suffix);
-  };
-}
-
-namespace details {
-
-template <class F, class... Args>
-constexpr auto StrContainsImpl(std::size_t* const d_where, F&& contains,
-                               Args&&... args) noexcept -> bool {
-  const std::size_t pos =
-      std::invoke(std::forward<F>(contains), std::forward<Args>(args)...);
-
-  const bool found = pos != std::string_view::npos;
-
-  if ((d_where != nullptr) && found) {
-    *d_where = pos;
-  }
-
-  return found;
-}
-
-}  // namespace details
-
-/**
- * @return true whenever the given \a str contains \a pattern in it
- *
- * @important Since \a pattern is a string_view the underlying string-like
- *            referenced NEEDS to outlive the matcher lifetime (i.e. do not
- *            give a rvalue of a std::string).
- *
- * @param[in] pattern The pattern to look for
- * @param[inout] d_where Optionally a pointer to an index that will be set to
- *                       the location of the pattern found in the input str
- *
- * @note The search for the pattern is done from the beginning of the string and
- *        will hence give the location of the FIRST pattern encountered
- */
-constexpr auto StrContains(std::string_view pattern,
-                           std::size_t* const d_where = nullptr) noexcept {
-  return [=](std::string_view str) noexcept -> bool {
-    return details::StrContainsImpl(
-        d_where, [](auto s, auto p) { return s.find(p); }, str, pattern);
-  };
-}
-
-/**
- * @return true whenever the given \a str contains \a pattern in it
- *
- * @important Since \a pattern is a string_view the underlying string-like
- *            referenced NEEDS to outlive the matcher lifetime (i.e. do not
- *            give a rvalue of a std::string).
- *
- * @param[in] pattern The pattern to look for
- * @param[inout] d_where Optionally a pointer to an index that will be set to
- *                       the location of the pattern found in the input str
- *
- * @note The search for the pattern is done from the back of the string and
- *        will hence give the location of the LAST pattern encountered
- */
-constexpr auto StrContainsR(std::string_view pattern,
-                            std::size_t* const d_where = nullptr) noexcept {
-  return [=](std::string_view str) noexcept -> bool {
-    return details::StrContainsImpl(
-        d_where, [](auto s, auto p) { return s.rfind(p); }, str, pattern);
-  };
-}
-
-/**
- * @return true whenever the given \a str contains ONE of the char contained in
- *         \a pattern
- *
- * @important Since \a pattern is a string_view the underlying string-like
- *            referenced NEEDS to outlive the matcher lifetime (i.e. do not
- *            give a rvalue of a std::string).
- *
- * @param[in] pattern The list of char to look for
- * @param[inout] d_where Optionally a pointer to an index that will be set to
- *                       the location of the char found
- *
- * @note The search for the chars is done from the beginning of the string and
- *       will hence give the location of the FIRST char encountered
- */
-constexpr auto StrContainsOneOf(std::string_view pattern,
-                                std::size_t* const d_where = nullptr) noexcept {
-  return [=](std::string_view str) noexcept -> bool {
-    return details::StrContainsImpl(
-        d_where, [](auto s, auto p) { return s.find_first_of(p); }, str,
-        pattern);
-  };
-}
-
-/**
- * @return true whenever the given \a str contains ONE of the char contained in
- *         \a pattern
- *
- * @important Since \a pattern is a string_view the underlying string-like
- *            referenced NEEDS to outlive the matcher lifetime (i.e. do not
- *            give a rvalue of a std::string).
- *
- * @param[in] pattern The list of char to look for
- * @param[inout] d_where Optionally a pointer to an index that will be set to
- *                       the location of the char found
- *
- * @note The search for the chars is done from the end of the string and
- *       will hence give the location of the LAST char encountered
- */
-constexpr auto StrContainsOneOfR(
-    std::string_view pattern, std::size_t* const d_where = nullptr) noexcept {
-  return [=](std::string_view str) noexcept -> bool {
-    return details::StrContainsImpl(
-        d_where, [](auto s, auto p) { return s.find_last_of(p); }, str,
-        pattern);
-  };
-}
-
 /**
  * @brief Switch construct for string like object
  *
@@ -356,18 +216,22 @@ struct StrSwitch final {
 
   constexpr StrSwitch(std::string_view str) : m_str(str), m_res(std::nullopt) {}
 
-  template <class Matcher, class T>
+  template <MatcherFor<std::string_view> Matcher, class T>
   constexpr auto Case(Matcher&& m, T&& value) -> StrSwitch& {
     if (!m_res.has_value()) {
-      if constexpr (std::is_constructible_v<std::string_view,
-                                            std::decay_t<Matcher>>) {
-        if (std::string_view{std::forward<Matcher>(m)} == m_str) {
-          m_res.emplace(std::forward<T>(value));
-        }
-      } else {
-        if (atb::IsMatching(std::forward<Matcher>(m), m_str)) {
-          m_res.emplace(std::forward<T>(value));
-        }
+      if (atb::IsMatching(std::forward<Matcher>(m), m_str)) {
+        m_res.emplace(std::forward<T>(value));
+      }
+    }
+
+    return *this;
+  }
+
+  template <std::equality_comparable_with<std::string_view> StrLike, class T>
+  constexpr auto Case(StrLike&& str, T&& value) -> StrSwitch& {
+    if (!m_res.has_value()) {
+      if (ATB_FWD(str) == m_str) {
+        m_res.emplace(ATB_FWD(value));
       }
     }
 
