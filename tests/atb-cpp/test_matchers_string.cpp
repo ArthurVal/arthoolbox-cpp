@@ -11,7 +11,6 @@ namespace {
 
 constexpr auto foo = "foo"sv;
 constexpr auto coucou = "Coucou"sv;
-constexpr auto sep = " "sv;
 constexpr auto chocolatine = "Chocolatine"sv;
 
 TEST(AtbMatchersStringTest, StrStartsWith) {
