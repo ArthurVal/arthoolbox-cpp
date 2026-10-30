@@ -256,7 +256,7 @@ struct AnyOf {
  * @return m(v[i]...) by selecting the Ith argument(s) from v...
  */
 template <class Matcher, std::size_t... I>
-struct OnArgsMatcher {
+struct ArgsAtMatcher {
   Matcher matcher;
 
   constexpr auto operator()(auto&&... v) const noexcept -> bool {
@@ -266,8 +266,8 @@ struct OnArgsMatcher {
 };
 
 template <std::size_t... I, class Matcher>
-constexpr auto OnArgs(Matcher&& m)
-    -> OnArgsMatcher<std::remove_cvref_t<Matcher>, I...> {
+constexpr auto ArgsAt(Matcher&& m)
+    -> ArgsAtMatcher<std::remove_cvref_t<Matcher>, I...> {
   return {ATB_FWD(m)};
 }
 
@@ -275,7 +275,7 @@ constexpr auto OnArgs(Matcher&& m)
  * @return true if m returns true for ALL the arguments individually
  */
 template <class Matcher>
-struct AllArgs {
+struct EveryArg {
   Matcher matcher;
 
   constexpr auto operator()(auto&&... v) const noexcept -> bool {
@@ -287,7 +287,7 @@ struct AllArgs {
  * @return true if m returns true for at least ONE of the arguments
  */
 template <class Matcher>
-struct AnyArgs {
+struct AnyArg {
   Matcher matcher;
 
   constexpr auto operator()(auto&&... v) const noexcept -> bool {
