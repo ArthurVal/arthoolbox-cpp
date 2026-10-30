@@ -8,7 +8,8 @@
 #include <string>
 #include <string_view>
 
-#include "atb-cpp/matchers/string.hpp"
+#include "atb-cpp/matchers.hpp"     // MatcherFor
+#include "atb-cpp/type_traits.hpp"  // ATB_FWD
 
 namespace atb {
 
@@ -218,10 +219,8 @@ struct StrSwitch final {
 
   template <MatcherFor<std::string_view> Matcher, class T>
   constexpr auto Case(Matcher&& m, T&& value) -> StrSwitch& {
-    if (!m_res.has_value()) {
-      if (atb::IsMatching(std::forward<Matcher>(m), m_str)) {
-        m_res.emplace(std::forward<T>(value));
-      }
+    if (!m_res.has_value() && atb::IsMatching(ATB_FWD(m), m_str)) {
+      m_res.emplace(ATB_FWD(value));
     }
 
     return *this;
@@ -229,13 +228,7 @@ struct StrSwitch final {
 
   template <std::equality_comparable_with<std::string_view> StrLike, class T>
   constexpr auto Case(StrLike&& str, T&& value) -> StrSwitch& {
-    if (!m_res.has_value()) {
-      if (ATB_FWD(str) == m_str) {
-        m_res.emplace(ATB_FWD(value));
-      }
-    }
-
-    return *this;
+    return Case(Eq(ATB_FWD(str)), ATB_FWD(value));
   }
 
   template <class T>

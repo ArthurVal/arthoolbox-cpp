@@ -4,6 +4,7 @@
 #include <iterator>
 #include <limits>
 
+#include "atb-cpp/matchers/string.hpp"
 #include "atb-cpp/string.hpp"
 #include "gtest/gtest.h"
 
