@@ -296,7 +296,8 @@ struct AnyArg {
 };
 
 /**
- * @brief Matcher that invoke \a func before calling the underlying \a matcher
+ * @brief Matcher that invoke \a func on each args individually before calling
+ * the underlying \a matcher
  */
 template <class F, class Matcher>
 struct MapArg {
@@ -305,6 +306,20 @@ struct MapArg {
 
   constexpr auto operator()(auto&&... v) const noexcept -> bool {
     return atb::IsMatching(matcher, std::invoke(transform, ATB_FWD(v))...);
+  }
+};
+
+/**
+ * @brief Matcher that invoke \a func with all args before calling the
+ * underlying \a matcher
+ */
+template <class F, class Matcher>
+struct ReduceArg {
+  F reduce;
+  Matcher matcher;
+
+  constexpr auto operator()(auto&&... v) const noexcept -> bool {
+    return atb::IsMatching(matcher, std::invoke(reduce, ATB_FWD(v)...));
   }
 };
 

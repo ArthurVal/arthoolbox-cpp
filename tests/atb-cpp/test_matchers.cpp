@@ -507,6 +507,49 @@ TEST(AtbMatchersTest, MapArg) {
   }
 }
 
+TEST(AtbMatchersTest, ReduceArg) {
+  using testing::Return;
+
+  ::testing::StrictMock<CallableMock<bool, std::string_view>> matcher;
+  {
+    ::testing::StrictMock<CallableMock<std::string_view, int, int, int, int>>
+        reduce;
+    using arg_t = typename decltype(reduce)::arg_t;
+
+    ::testing::Sequence seq;
+    EXPECT_CALL(reduce, Call(arg_t{1, 2, 3, 4}))
+        .Times(1)
+        .WillOnce(Return("Coucou"))
+        .RetiresOnSaturation();
+
+    EXPECT_CALL(matcher, Call("Coucou"))
+        .Times(1)
+        .WillOnce(Return(true))
+        .RetiresOnSaturation();
+
+    EXPECT_TRUE(atb::IsMatching(ReduceArg(std::ref(reduce), std::ref(matcher)),
+                                1, 2, 3, 4));
+  }
+
+  {
+    ::testing::StrictMock<CallableMock<std::string_view, std::string_view>>
+        reduce;
+    ::testing::Sequence seq;
+    EXPECT_CALL(reduce, Call("Yo"sv))
+        .Times(1)
+        .WillOnce(Return("Hey"sv))
+        .RetiresOnSaturation();
+
+    EXPECT_CALL(matcher, Call("Hey"sv))
+        .Times(1)
+        .WillOnce(Return(false))
+        .RetiresOnSaturation();
+
+    EXPECT_FALSE(
+        atb::IsMatching(ReduceArg(std::ref(reduce), std::ref(matcher)), "Yo"));
+  }
+}
+
 TEST(AtbMatchersTest, AnyMatcher) {
   using matcher_t = AnyMatcher<int, std::string_view>;
 
