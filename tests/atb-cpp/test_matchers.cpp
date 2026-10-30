@@ -493,8 +493,10 @@ TEST(AtbMatchersTest, MapArg) {
 
   {
     ::testing::StrictMock<CallableMock<bool, int, int, int>> matcher;
+    using arg_t = typename decltype(matcher)::arg_t;
+
     ::testing::Sequence seq;
-    EXPECT_CALL(matcher, Call(std::make_tuple(333, 222, 111)))
+    EXPECT_CALL(matcher, Call(arg_t(333, 222, 111)))
         .Times(1)
         .WillOnce(Return(false))
         .RetiresOnSaturation();
