@@ -295,6 +295,19 @@ struct AnyArg {
   }
 };
 
+/**
+ * @brief Matcher that invoke \a func before calling the underlying \a matcher
+ */
+template <class F, class Matcher>
+struct MapArg {
+  F transform;
+  Matcher matcher;
+
+  constexpr auto operator()(auto&&... v) const noexcept -> bool {
+    return atb::IsMatching(matcher, std::invoke(transform, ATB_FWD(v))...);
+  }
+};
+
 // TYPE ERASED MATCHER /////////////////////////////////////////////////////////
 
 namespace details {

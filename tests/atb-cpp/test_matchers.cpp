@@ -17,6 +17,12 @@ namespace atb {
 
 namespace {
 
+struct Foo {
+  float foo;
+  int bar;
+  bool baz;
+};
+
 template <class... Args>
 struct MatcherFreeFunctionMock : public CallableMock<bool, const Args&...> {
   using Base = CallableMock<bool, const Args&...>;
@@ -461,6 +467,40 @@ TEST(AtbMatchersTest, AnyArgs) {
         .RetiresOnSaturation();
 
     EXPECT_FALSE(atb::IsMatching(AnyArg(std::ref(mock)), "Foo"sv, "Bar"sv));
+  }
+}
+
+TEST(AtbMatchersTest, MapArg) {
+  using testing::Return;
+
+  {
+    ::testing::StrictMock<CallableMock<bool, std::string_view>> matcher;
+    ::testing::StrictMock<CallableMock<std::string_view, int>> map;
+    ::testing::Sequence seq;
+    EXPECT_CALL(map, Call(42))
+        .Times(1)
+        .WillOnce(Return("Coucou"))
+        .RetiresOnSaturation();
+
+    EXPECT_CALL(matcher, Call("Coucou"))
+        .Times(1)
+        .WillOnce(Return(true))
+        .RetiresOnSaturation();
+
+    EXPECT_TRUE(atb::IsMatching(MapArg(std::ref(map), std::ref(matcher)), 42));
+  }
+
+  {
+    ::testing::StrictMock<CallableMock<bool, int, int, int>> matcher;
+    ::testing::Sequence seq;
+    EXPECT_CALL(matcher, Call(std::make_tuple(333, 222, 111)))
+        .Times(1)
+        .WillOnce(Return(false))
+        .RetiresOnSaturation();
+
+    EXPECT_FALSE(atb::IsMatching(MapArg(&Foo::bar, std::ref(matcher)),
+                                 Foo{42.f, 333, true}, Foo{3.14f, 222, true},
+                                 Foo{2.7f, 111, false}));
   }
 }
 
