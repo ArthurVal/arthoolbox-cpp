@@ -4,9 +4,30 @@
 #include <string_view>
 #include <tuple>
 
-#include "atb-cpp/type_traits.hpp"
+#include "atb-cpp/type_traits.hpp"  // ATB_FWD
 
 namespace atb {
+
+namespace details {
+
+constexpr auto fmt_get_flag(char flag, bool& d_value, auto it, const auto end) {
+  if (it != end && *it == flag) {
+    d_value = true;
+    ++it;
+  }
+  return it;
+}
+
+constexpr auto fmt_throw_when_invalid(
+    auto it, const auto end, std::string msg = "Invalid format specifier") {
+  if ((it != end) && (*it != '}')) {
+    throw std::format_error(std::move(msg));
+  }
+
+  return it;
+}
+
+}  // namespace details
 
 /// Checks if a given type T has a valie std::formatter defined
 template <class T, class CharT = char>
@@ -51,39 +72,7 @@ struct FmtTry {
   }
 };
 
-/// std::format adapter that either print value OR (when value is considered not
-/// formatable) a \a fallback value (default to '<?>')
-template <class G, class... Ts>
-struct FmtJoin {
-  G glue;
-  std::tuple<Ts...> values;
-
-  constexpr explicit FmtJoin(G g, Ts... args) noexcept
-      : glue(std::move(g)), values(std::move(args)...) {}
-};
-
 }  // namespace atb
-
-namespace atb::details {
-
-constexpr auto fmt_get_flag(char flag, bool& d_value, auto it, const auto end) {
-  if (it != end && *it == flag) {
-    d_value = true;
-    ++it;
-  }
-  return it;
-}
-
-constexpr auto fmt_throw_when_invalid(
-    auto it, const auto end, std::string msg = "Invalid format specifier") {
-  if ((it != end) && (*it != '}')) {
-    throw std::format_error(std::move(msg));
-  }
-
-  return it;
-}
-
-}  // namespace atb::details
 
 namespace std {
 
@@ -139,6 +128,25 @@ class formatter<atb::FmtTry<T, U>, CharT> {
     }
   }
 };
+
+}  // namespace std
+
+namespace atb {
+
+/// std::format adapter that either print value OR (when value is considered not
+/// formatable) a \a fallback value (default to '<?>')
+template <class G, class... Ts>
+struct FmtJoin {
+  G glue;
+  std::tuple<Ts...> values;
+
+  constexpr explicit FmtJoin(G g, Ts... args) noexcept
+      : glue(std::move(g)), values(std::move(args)...) {}
+};
+
+}  // namespace atb
+
+namespace std {
 
 /// Format adapter for FmtJoin
 template <class G, class... Ts, class CharT>
