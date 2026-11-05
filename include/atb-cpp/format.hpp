@@ -1,6 +1,9 @@
 #pragma once
 
+#include <algorithm>
+#include <concepts>
 #include <format>  // std::format
+#include <ranges>
 #include <string_view>
 #include <tuple>
 
@@ -8,26 +11,10 @@
 
 namespace atb {
 
-namespace details {
-
-constexpr auto fmt_get_flag(char flag, bool& d_value, auto it, const auto end) {
-  if (it != end && *it == flag) {
-    d_value = true;
-    ++it;
-  }
-  return it;
+/// Help function to test if the parse context iterator didn't reach the end
+constexpr auto FmtParseContextNotOver(const auto it, const auto end) -> bool {
+  return ((it != end) && (*it != '}'));
 }
-
-constexpr auto fmt_throw_when_invalid(
-    auto it, const auto end, std::string msg = "Invalid format specifier") {
-  if ((it != end) && (*it != '}')) {
-    throw std::format_error(std::move(msg));
-  }
-
-  return it;
-}
-
-}  // namespace details
 
 /// Checks if a given type T has a valie std::formatter defined
 template <class T, class CharT = char>
@@ -55,19 +42,19 @@ struct FmtTry {
 
   template <class T>
   constexpr auto OrElse(
-      T&& new_fallback) && -> FmtTry<value_type, std::remove_cvref_t<T>> {
+      T&& other) && -> FmtTry<value_type, std::remove_cvref_t<T>> {
     return {
         .value = std::move(value),
-        .fallback = std::forward<T>(new_fallback),
+        .fallback = ATB_FWD(other),
     };
   }
 
   template <class T>
   constexpr auto OrElse(
-      T&& new_fallback) const& -> FmtTry<value_type, std::remove_cvref_t<T>> {
+      T&& other) const& -> FmtTry<value_type, std::remove_cvref_t<T>> {
     return {
         .value = value,
-        .fallback = std::forward<T>(new_fallback),
+        .fallback = ATB_FWD(other),
     };
   }
 };
@@ -76,56 +63,41 @@ struct FmtTry {
 
 namespace std {
 
-/// TODO
+/// FmtTry formatter -- Normal value
 template <class T, class U, class CharT>
   requires atb::formattable<T, CharT>
 class formatter<atb::FmtTry<T, U>, CharT> {
-  bool m_is_repr = false; /*!< True whenever fmt parsed a 'REPR' (i.e. :r) */
   std::formatter<T, CharT> m_fmt_value; /*!< value formatter */
 
  public:
   template <class ParseContext>
   constexpr auto parse(ParseContext& ctx) {
-    ctx.advance_to(
-        atb::details::fmt_get_flag('r', m_is_repr, ctx.begin(), ctx.end()));
     return m_fmt_value.parse(ctx);
   }
 
-  template <class FormatContext>
-  auto format(const atb::FmtTry<T, U>& fmt_or, FormatContext& ctx) const {
-    if (m_is_repr) {
-      ctx.advance_to(std::format_to(ctx.out(), "FmtTry{{.value = "));
-      ctx.advance_to(m_fmt_value.format(fmt_or.value, ctx));
-      return std::format_to(ctx.out(), ", .fallback = {}}}", fmt_or.fallback);
-    } else {
-      return m_fmt_value.format(fmt_or.value, ctx);
-    }
+  template <class FmtContext>
+  auto format(const atb::FmtTry<T, U>& fmt_or, FmtContext& ctx) const {
+    return m_fmt_value.format(fmt_or.value, ctx);
   }
 };
 
-/// TODO
+/// FmtTry formatter -- Fallback
 template <class T, class U, class CharT>
   requires(!atb::formattable<T, CharT>) && atb::formattable<U, CharT>
 class formatter<atb::FmtTry<T, U>, CharT> {
-  bool m_is_repr = false; /*!< True whenever fmt parsed a 'REPR' (i.e. :r) */
-  std::formatter<U, CharT> m_fmt_fallback; /*!< fallback formatter */
+  std::formatter<U, CharT> m_fmt_fallback;
 
  public:
   template <class ParseContext>
   constexpr auto parse(ParseContext& ctx) {
-    ctx.advance_to(
-        atb::details::fmt_get_flag('r', m_is_repr, ctx.begin(), ctx.end()));
-    return m_fmt_fallback.parse(ctx);
+    // Providing specifier for the fallback is not allowed but should cause an
+    // error (in case we use fmt specifier for the value)
+    return ctx.begin();
   }
 
-  template <class FormatContext>
-  auto format(const atb::FmtTry<T, U>& fmt_or, FormatContext& ctx) const {
-    if (m_is_repr) {
-      return std::format_to(ctx.out(), "FmtTry{{.value = <?>, .fallback = {}}}",
-                            fmt_or.fallback);
-    } else {
-      return m_fmt_fallback.format(fmt_or.fallback, ctx);
-    }
+  template <class FmtContext>
+  auto format(const atb::FmtTry<T, U>& fmt_or, FmtContext& ctx) const {
+    return m_fmt_fallback.format(fmt_or.fallback, ctx);
   }
 };
 
@@ -133,64 +105,117 @@ class formatter<atb::FmtTry<T, U>, CharT> {
 
 namespace atb {
 
-/// std::format adapter that either print value OR (when value is considered not
-/// formatable) a \a fallback value (default to '<?>')
-template <class G, class... Ts>
+/// std::format adapter use to join multiple arguments around a 'glue'
+///
+/// Using FmtJoin correspond to:
+/// - FmtJoin(GLUE, V1, V2, V3 ...) ~ "{V1}{GLUE}{V2}{GLUE}{V3}{GLUE}..."
+///
+/// By default, when each Vi types differs, the FmtJoin use and underlying tuple
+/// as container. Because all types differs, providing a format specifier is
+/// forbidden.
+/// If all the types are the same, the underlying container will be an
+/// std::array and giving format specifier is allowed (the same specifier will
+/// be used for ALL elements).
+///
+/// When providing a single value which is a valid iterable (based on the
+/// std::ranges::range concept), the FmtJoin will iterate over all the elements
+/// of the range instead.
+template <class G, class Container>
 struct FmtJoin {
-  G glue;
-  std::tuple<Ts...> values;
+  G glue;           /*!< GLUE element used during the JOIN */
+  Container values; /*!< Container holding ALL values to join */
 
-  constexpr explicit FmtJoin(G g, Ts... args) noexcept
-      : glue(std::move(g)), values(std::move(args)...) {}
+  constexpr FmtJoin(G g, auto&&... args)
+      : glue{std::move(g)}, values{ATB_FWD(args)...} {}
 };
+
+// CTAD - Deduce when giving any iterable
+template <class G, std::ranges::range R>
+FmtJoin(G, R&&) -> FmtJoin<G, std::views::all_t<R>>;
+
+// CTAD - Deduced when multiple identical types are provided
+template <class G, class T1, class T2, class... Ts>
+  requires(std::same_as<std::decay_t<T1>, std::decay_t<T2>> &&
+           (std::same_as<std::decay_t<T1>, std::decay_t<Ts>> && ...))
+FmtJoin(G, T1&&, T2&&, Ts&&...)
+    -> FmtJoin<G, std::array<std::decay_t<T1>, 2 + sizeof...(Ts)>>;
+
+// CTAD - Tuple
+template <class G, class... Ts>
+FmtJoin(G, Ts&&...) -> FmtJoin<G, std::tuple<std::decay_t<Ts>...>>;
 
 }  // namespace atb
 
 namespace std {
 
-/// Format adapter for FmtJoin
+/// FmtJoin formatter -- TUPLE
 template <class G, class... Ts, class CharT>
   requires atb::formattable<G, CharT> && (atb::formattable<Ts, CharT> && ...)
-class formatter<atb::FmtJoin<G, Ts...>, CharT> {
-  bool m_is_repr = false; /*!< True whenever fmt parsed a 'REPR' (i.e. :r) */
+class formatter<atb::FmtJoin<G, std::tuple<Ts...>>, CharT> {
+  std::formatter<G, CharT> m_fmt_glue;
 
  public:
   template <class ParseContext>
   constexpr auto parse(ParseContext& ctx) {
-    const auto end = ctx.end();
-    auto it = atb::details::fmt_get_flag('r', m_is_repr, ctx.begin(), end);
-    return atb::details::fmt_throw_when_invalid(it, end);
+    auto it = ctx.begin();
+    if (atb::FmtParseContextNotOver(it, ctx.end())) {
+      throw std::format_error{
+          "FmtJoin using different value types doesn't support element format "
+          "specifiers",
+      };
+    }
+    return it;
   }
 
-  template <class FormatContext>
-  auto format(const atb::FmtJoin<G, Ts...>& fmt_join,
-              FormatContext& ctx) const {
-    auto out = ctx.out();
-    if (m_is_repr) {
-      out = std::format_to(out, "FmtJoin{{.glue = {}, .values = {{",
-                           fmt_join.glue);
-
-      if constexpr (sizeof...(Ts) != 0) {
-        std::apply(
-            [&out](const auto& first, const auto&... others) {
-              out = std::format_to(out, "{}", first);
-              ((out = std::format_to(out, ", {}", others)), ...);
-            },
-            fmt_join.values);
-      }
-
-      out = std::format_to(out, "}}}}");
-    } else {
-      if constexpr (sizeof...(Ts) != 0) {
-        std::apply(
-            [&out, &fmt_join](const auto& first, const auto&... others) {
-              out = std::format_to(out, "{}", first);
-              ((out = std::format_to(out, "{}{}", fmt_join.glue, others)), ...);
-            },
-            fmt_join.values);
-      }
+  template <class FmtContext>
+  auto format(const atb::FmtJoin<G, std::tuple<Ts...>>& join,
+              FmtContext& ctx) const {
+    if constexpr (sizeof...(Ts) != 0) {
+      std::apply(
+          [&](const auto& first, const auto&... others) {
+            ctx.advance_to(std::format_to(ctx.out(), "{}", first));
+            ((ctx.advance_to(m_fmt_glue.format(join.glue, ctx)),
+              ctx.advance_to(std::format_to(ctx.out(), "{}", others))),
+             ...);
+          },
+          join.values);
     }
-    return out;
+
+    return ctx.out();
+  }
+};
+
+/// FmtJoin formatter -- RANGE / ARRAY
+template <class G, class R, class CharT>
+  requires std::ranges::input_range<R> && atb::formattable<G, CharT> &&
+           atb::formattable<
+               std::remove_cvref_t<std::ranges::range_reference_t<R>>, CharT>
+class formatter<atb::FmtJoin<G, R>, CharT>
+    : public std::formatter<
+          std::remove_cvref_t<std::ranges::range_reference_t<R>>, CharT> {
+  std::formatter<G, CharT> m_fmt_glue;
+
+  using base_formatter =
+      std::formatter<std::remove_cvref_t<std::ranges::range_reference_t<R>>,
+                     CharT>;
+
+ public:
+  template <class FmtContext>
+  auto format(const atb::FmtJoin<G, R>& join, FmtContext& ctx) const {
+    auto it = std::ranges::begin(join.values);
+    const auto end = std::ranges::end(join.values);
+
+    if (it == end) {
+      return ctx.out();
+    }
+
+    ctx.advance_to(base_formatter::format(*it, ctx));
+    for (++it; it != end; ++it) {
+      ctx.advance_to(m_fmt_glue.format(join.glue, ctx));
+      ctx.advance_to(base_formatter::format(*it, ctx));
+    }
+
+    return ctx.out();
   }
 };
 

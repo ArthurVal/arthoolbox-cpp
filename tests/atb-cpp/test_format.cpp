@@ -1,3 +1,5 @@
+#include <vector>
+
 #include "atb-cpp/format.hpp"
 #include "gtest/gtest.h"
 
@@ -8,6 +10,10 @@ namespace atb {
 namespace {
 
 struct NotFormattable {};
+
+// ==========================================================================
+// FmtTry Tests
+// ==========================================================================
 
 TEST(AtbFormatTest, FmtTryFormattable) {
   // 1. Basic formatting (default fallback "<?>" is ignored)
@@ -29,30 +35,10 @@ TEST(AtbFormatTest, FmtTryUnformattable) {
 }
 
 TEST(AtbFormatTest, FmtTryDelegatedSpecifiers) {
-  // 1. Specifiers correctly pass through to the value's formatter
+  // Specifiers correctly pass through to the value's formatter when formattable
   EXPECT_EQ(std::format("{:.2f}", FmtTry{3.14159}), "3.14");
   EXPECT_EQ(std::format("{:04d}", FmtTry{42}), "0042");
   EXPECT_EQ(std::format("{:x}", FmtTry{255}), "ff");
-
-  // 2. Specifiers correctly pass through to the fallback's formatter
-  EXPECT_EQ(std::format("{:>5}", FmtTry{NotFormattable{}, "NA"}), "   NA");
-  EXPECT_EQ(std::format("{:04d}", FmtTry{NotFormattable{}, 42}), "0042");
-}
-
-TEST(AtbFormatTest, FmtTryReprMode) {
-  // 1. Repr mode for a formattable type
-  EXPECT_EQ(std::format("{:r}", FmtTry{42, "default"}),
-            "FmtTry{.value = 42, .fallback = default}");
-
-  // 2. Repr mode for an unformattable type
-  EXPECT_EQ(std::format("{:r}", FmtTry{NotFormattable{}, "default"}),
-            "FmtTry{.value = <?>, .fallback = default}");
-
-  // 3. Emergent feature: Repr mode with delegated specifiers!
-  // The 'r' is consumed by FmtTry, and the 'x' is cleanly passed down to the
-  // int formatter.
-  EXPECT_EQ(std::format("{:rx}", FmtTry{255, "default"}),
-            "FmtTry{.value = ff, .fallback = default}");
 }
 
 TEST(AtbFormatTest, FmtTryOrElse) {
@@ -69,82 +55,80 @@ TEST(AtbFormatTest, FmtTryOrElse) {
 TEST(AtbFormatTest, FmtTryInvalidSpecifiersThrow) {
   // 1. Formattable type throwing
   // std::string doesn't support 'd' (decimal integer).
-  // FmtTry passes 'd' to std::string's formatter, which correctly throws.
   auto try_str = FmtTry{std::string("hello")};
   auto args1 = std::make_format_args(try_str);
   EXPECT_THROW({ auto _ = std::vformat("{:d}", args1); }, std::format_error);
 
   // 2. Unformattable type throwing
-  // We fall back to printing "NA" (a string), which also rejects the 'd'
-  // specifier.
+  // The unformattable specialization of FmtTry returns ctx.begin() in parse().
+  // If a specifier is provided, std::format will see unparsed characters and
+  // throw.
   auto try_unfmt = FmtTry{NotFormattable{}, std::string("NA")};
   auto args2 = std::make_format_args(try_unfmt);
-  EXPECT_THROW({ auto _ = std::vformat("{:d}", args2); }, std::format_error);
+  EXPECT_THROW({ auto _ = std::vformat("{:>5}", args2); }, std::format_error);
 }
 
+// ==========================================================================
+// FmtJoin Tests
+// ==========================================================================
+
 TEST(AtbFormatTest, FmtJoinStandardMode) {
-  // 1. Multiple identical types
+  // 1. Array CTAD (Multiple identical types)
   EXPECT_EQ(std::format("{}", FmtJoin(", ", 1, 2, 3)), "1, 2, 3");
 
-  // 2. Heterogeneous types (int, string literal, double)
+  // 2. Tuple CTAD (Heterogeneous types: int, string literal, double)
   EXPECT_EQ(std::format("{}", FmtJoin(" | ", 42, "hello", 3.14)),
             "42 | hello | 3.14");
 
   // 3. Different glue types (char instead of string_view)
-  EXPECT_EQ(std::format("{}", FmtJoin('-', "a", "b", "c")), "a-b-c");
+  EXPECT_EQ(std::format("{}", FmtJoin('-', "a"sv, "b"sv, "c"sv)), "a-b-c");
 
   // 4. std::string as glue
   std::string glue = " and ";
-  EXPECT_EQ(std::format("{}", FmtJoin(glue, "Alice", "Bob")), "Alice and Bob");
+  EXPECT_EQ(std::format("{}", FmtJoin(glue, "Alice"sv, "Bob"sv)),
+            "Alice and Bob");
+}
+
+TEST(AtbFormatTest, FmtJoinRangeMode) {
+  // Range CTAD (std::vector)
+  std::vector<int> vec = {10, 20, 30};
+  EXPECT_EQ(std::format("{}", FmtJoin(" - ", vec)), "10 - 20 - 30");
+
+  std::vector<std::string> empty_vec;
+  EXPECT_EQ(std::format("{}", FmtJoin(", ", empty_vec)), "");
 }
 
 TEST(AtbFormatTest, FmtJoinEdgeCases) {
-  // 1. Single element (glue should not be printed)
+  // 1. Array CTAD Single element fallback (glue should not be printed)
   EXPECT_EQ(std::format("{}", FmtJoin(", ", 42)), "42");
 
-  // 2. Zero elements (should print nothing, safe tuple iteration)
+  // 2. Tuple CTAD Zero elements (should print nothing, safe iteration)
   EXPECT_EQ(std::format("{}", FmtJoin(", ")), "");
 
   // 3. Empty glue
   EXPECT_EQ(std::format("{}", FmtJoin("", 1, 2, 3)), "123");
 }
 
-TEST(AtbFormatTest, FmtJoinReprMode) {
-  // 1. Standard repr parsing
-  EXPECT_EQ(std::format("{:r}", FmtJoin("-", 1, 2, 3)),
-            "FmtJoin{.glue = -, .values = {1, 2, 3}}");
+TEST(AtbFormatTest, FmtJoinArrayRangeDelegatedSpecifiers) {
+  // Because the Array/Range formatter inherits from std::formatter<T>,
+  // element format specifiers are natively supported!
 
-  // 2. Repr mode with heterogeneous types
-  EXPECT_EQ(std::format("{:r}", FmtJoin(" | ", 42, "hello")),
-            "FmtJoin{.glue =  | , .values = {42, hello}}");
+  // Array
+  EXPECT_EQ(std::format("{:02}", FmtJoin("-", 1, 2, 3)), "01-02-03");
 
-  // 3. Repr mode with single element
-  EXPECT_EQ(std::format("{:r}", FmtJoin(":", 99)),
-            "FmtJoin{.glue = :, .values = {99}}");
-
-  // 4. Repr mode with zero elements
-  EXPECT_EQ(std::format("{:r}", FmtJoin(", ")),
-            "FmtJoin{.glue = , , .values = {}}");
+  // Range
+  std::vector<int> vec = {255, 128};
+  EXPECT_EQ(std::format("{:X}", FmtJoin(":", vec)), "FF:80");
 }
 
-TEST(AtbFormatTest, FmtJoinInvalidSpecifiersThrow) {
-  auto joined = FmtJoin(", ", 1, 2, 3);
-
-  // We must use std::vformat to test throwing.
-  // If we used std::format("{:x}", joined), the compiler's consteval
-  // checks would fail the build entirely, which is good in production
-  // but prevents us from writing a runtime EXPECT_THROW test.
-
+TEST(AtbFormatTest, FmtJoinTupleSpecifiersThrow) {
+  // Tuple CTAD explicitly rejects specifiers in parse() because elements
+  // differ.
+  auto joined = FmtJoin(", ", 1, "hello");
   auto args = std::make_format_args(joined);
 
-  // 'x' (hex) is not supported by FmtJoin itself
+  // Throws standard format error due to custom exception in parse()
   EXPECT_THROW({ auto _ = std::vformat("{:x}", args); }, std::format_error);
-
-  // 'rx' (repr + trailing garbage) is not supported
-  EXPECT_THROW({ auto _ = std::vformat("{:rx}", args); }, std::format_error);
-
-  // Unclosed braces should throw (handled by std::format internals)
-  EXPECT_THROW({ auto _ = std::vformat("{:", args); }, std::format_error);
 }
 
 }  // namespace
