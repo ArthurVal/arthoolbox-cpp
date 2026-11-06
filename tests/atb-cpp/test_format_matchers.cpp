@@ -58,6 +58,16 @@ TEST(AtbFormatMatchersTest, Lt) {
   static_assert(!atb::formattable<Lt<NotFormattable>>);
 }
 
+TEST(AtbFormatMatchersTest, Near) {
+  EXPECT_EQ(std::format("{}", Near(true)), "~= true (+/- 1e-06)");
+  EXPECT_EQ(std::format("{}", Near(10)), "~= 10 (+/- 1e-06)");
+  EXPECT_EQ(std::format("{:X}", Near(0xFF)), "~= FF (+/- 1e-06)");
+  static_assert(!atb::formattable<Near<NotFormattable>>);
+
+  EXPECT_EQ(std::format("{}", Near(10, 20)), "~= 10 (+/- 20)");
+  EXPECT_EQ(std::format("{}", Near(10, NotFormattable{})), "~= 10 (+/- <?>)");
+}
+
 }  // namespace
 
 }  // namespace atb

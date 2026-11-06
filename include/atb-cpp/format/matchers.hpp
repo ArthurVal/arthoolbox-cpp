@@ -85,16 +85,19 @@ struct formatter<atb::Lt<T>, CharT> : std::formatter<T, CharT> {
   }
 };
 
-// template <class T, class Error, class CharT>
-// struct formatter<atb::Near<T, Error>, CharT>
-//     : atb::details::MatcherFormatterBase {
-//   template <class FormatContext>
-//   auto format(const atb::Near<T, Error>& m, FormatContext& ctx) const {
-//     return std::format_to(ctx.out(), "~ {} (+/- {})",
-//     atb::FmtTry{m.expected},
-//                           atb::FmtTry{m.abs_error});
-//   }
-// };
+template <class T, class Error, class CharT>
+struct formatter<atb::Near<T, Error>, CharT> : std::formatter<T, CharT> {
+  using base_formatter = std::formatter<T, CharT>;
+
+  template <class FormatContext>
+  constexpr auto format(const atb::Near<T, Error>& matcher,
+                        FormatContext& ctx) const {
+    ctx.advance_to(std::format_to(ctx.out(), "~= "));
+    ctx.advance_to(base_formatter::format(matcher.expected, ctx));
+    return std::format_to(ctx.out(), " (+/- {})",
+                          atb::FmtTry{matcher.abs_error});
+  }
+};
 
 // COMPOSITE MATCHERS FORMATTERS ///////////////////////////////////////////////
 
