@@ -20,59 +20,70 @@ struct formatter<atb::Always<Value>, CharT> : std::formatter<bool, CharT> {
 };
 
 template <class T, class CharT>
-struct formatter<atb::Eq<T>, CharT> : std::formatter<atb::FmtTry<T>, CharT> {
-  using base_formatter = std::formatter<atb::FmtTry<T>, CharT>;
+struct formatter<atb::Eq<T>, CharT> : std::formatter<T, CharT> {
+  using base_formatter = std::formatter<T, CharT>;
 
   template <class FormatContext>
   constexpr auto format(const atb::Eq<T>& matcher, FormatContext& ctx) const {
     ctx.advance_to(std::format_to(ctx.out(), "== "));
-    return base_formatter::format(atb::FmtTry{matcher.expected}, ctx);
+    return base_formatter::format(matcher.expected, ctx);
   }
 };
 
-// template <class T, class CharT>
-// struct formatter<atb::Ne<T>, CharT> : std::formatter<atb::FmtTry<T>, CharT> {
-//   using base_formatter = std::formatter<atb::FmtTry<T>, CharT>;
+template <class T, class CharT>
+struct formatter<atb::Ne<T>, CharT> : std::formatter<T, CharT> {
+  using base_formatter = std::formatter<T, CharT>;
 
-//   template <class FormatContext>
-//   constexpr auto format(const atb::Ne<T>& matcher, FormatContext& ctx) const {
-//     ctx.advance_to(std::format_to(ctx.out(), "== "));
-//     return base_formatter::format(atb::FmtTry{matcher.expected}, ctx);
-//   }
-// };
+  template <class FormatContext>
+  constexpr auto format(const atb::Ne<T>& matcher, FormatContext& ctx) const {
+    ctx.advance_to(std::format_to(ctx.out(), "!= "));
+    return base_formatter::format(matcher.expected, ctx);
+  }
+};
 
+template <class T, class CharT>
+struct formatter<atb::Ge<T>, CharT> : std::formatter<T, CharT> {
+  using base_formatter = std::formatter<T, CharT>;
 
-// template <class T, class CharT>
-// struct formatter<atb::Ge<T>, CharT> : atb::details::MatcherFormatterBase {
-//   template <class FormatContext>
-//   auto format(const atb::Ge<T>& m, FormatContext& ctx) const {
-//     return std::format_to(ctx.out(), ">= {}", atb::FmtTry{m.expected});
-//   }
-// };
+  template <class FormatContext>
+  constexpr auto format(const atb::Ge<T>& matcher, FormatContext& ctx) const {
+    ctx.advance_to(std::format_to(ctx.out(), ">= "));
+    return base_formatter::format(matcher.expected, ctx);
+  }
+};
 
-// template <class T, class CharT>
-// struct formatter<atb::Gt<T>, CharT> : atb::details::MatcherFormatterBase {
-//   template <class FormatContext>
-//   auto format(const atb::Gt<T>& m, FormatContext& ctx) const {
-//     return std::format_to(ctx.out(), "> {}", atb::FmtTry{m.expected});
-//   }
-// };
+template <class T, class CharT>
+struct formatter<atb::Gt<T>, CharT> : std::formatter<T, CharT> {
+  using base_formatter = std::formatter<T, CharT>;
 
-// template <class T, class CharT>
-// struct formatter<atb::Le<T>, CharT> : atb::details::MatcherFormatterBase {
-//   template <class FormatContext>
-//   auto format(const atb::Le<T>& m, FormatContext& ctx) const {
-//     return std::format_to(ctx.out(), "<= {}", atb::FmtTry{m.expected});
-//   }
-// };
+  template <class FormatContext>
+  constexpr auto format(const atb::Gt<T>& matcher, FormatContext& ctx) const {
+    ctx.advance_to(std::format_to(ctx.out(), "> "));
+    return base_formatter::format(matcher.expected, ctx);
+  }
+};
 
-// template <class T, class CharT>
-// struct formatter<atb::Lt<T>, CharT> : atb::details::MatcherFormatterBase {
-//   template <class FormatContext>
-//   auto format(const atb::Lt<T>& m, FormatContext& ctx) const {
-//     return std::format_to(ctx.out(), "< {}", atb::FmtTry{m.expected});
-//   }
-// };
+template <class T, class CharT>
+struct formatter<atb::Le<T>, CharT> : std::formatter<T, CharT> {
+  using base_formatter = std::formatter<T, CharT>;
+
+  template <class FormatContext>
+  constexpr auto format(const atb::Le<T>& matcher, FormatContext& ctx) const {
+    ctx.advance_to(std::format_to(ctx.out(), "<= "));
+    return base_formatter::format(matcher.expected, ctx);
+  }
+};
+
+template <class T, class CharT>
+struct formatter<atb::Lt<T>, CharT> : std::formatter<T, CharT> {
+  using base_formatter = std::formatter<T, CharT>;
+
+  template <class FormatContext>
+  constexpr auto format(const atb::Lt<T>& matcher, FormatContext& ctx) const {
+    ctx.advance_to(std::format_to(ctx.out(), "< "));
+    return base_formatter::format(matcher.expected, ctx);
+  }
+};
 
 // template <class T, class Error, class CharT>
 // struct formatter<atb::Near<T, Error>, CharT>

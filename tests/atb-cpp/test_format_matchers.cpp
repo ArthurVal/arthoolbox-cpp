@@ -20,7 +20,42 @@ TEST(AtbFormatMatchersTest, Eq) {
   EXPECT_EQ(std::format("{}", Eq(true)), "== true");
   EXPECT_EQ(std::format("{}", Eq(10)), "== 10");
   EXPECT_EQ(std::format("{:X}", Eq(0xFF)), "== FF");
-  EXPECT_EQ(std::format("{}", Eq(NotFormattable{})), "== <?>");
+  static_assert(!atb::formattable<Eq<NotFormattable>>);
+}
+
+TEST(AtbFormatMatchersTest, Ne) {
+  EXPECT_EQ(std::format("{}", Ne(true)), "!= true");
+  EXPECT_EQ(std::format("{}", Ne(10)), "!= 10");
+  EXPECT_EQ(std::format("{:X}", Ne(0xFF)), "!= FF");
+  static_assert(!atb::formattable<Ne<NotFormattable>>);
+}
+
+TEST(AtbFormatMatchersTest, Ge) {
+  EXPECT_EQ(std::format("{}", Ge(true)), ">= true");
+  EXPECT_EQ(std::format("{}", Ge(10)), ">= 10");
+  EXPECT_EQ(std::format("{:X}", Ge(0xFF)), ">= FF");
+  static_assert(!atb::formattable<Ge<NotFormattable>>);
+}
+
+TEST(AtbFormatMatchersTest, Gt) {
+  EXPECT_EQ(std::format("{}", Gt(true)), "> true");
+  EXPECT_EQ(std::format("{}", Gt(10)), "> 10");
+  EXPECT_EQ(std::format("{:X}", Gt(0xFF)), "> FF");
+  static_assert(!atb::formattable<Gt<NotFormattable>>);
+}
+
+TEST(AtbFormatMatchersTest, Le) {
+  EXPECT_EQ(std::format("{}", Le(true)), "<= true");
+  EXPECT_EQ(std::format("{}", Le(10)), "<= 10");
+  EXPECT_EQ(std::format("{:X}", Le(0xFF)), "<= FF");
+  static_assert(!atb::formattable<Le<NotFormattable>>);
+}
+
+TEST(AtbFormatMatchersTest, Lt) {
+  EXPECT_EQ(std::format("{}", Lt(true)), "< true");
+  EXPECT_EQ(std::format("{}", Lt(10)), "< 10");
+  EXPECT_EQ(std::format("{:X}", Lt(0xFF)), "< FF");
+  static_assert(!atb::formattable<Lt<NotFormattable>>);
 }
 
 }  // namespace
