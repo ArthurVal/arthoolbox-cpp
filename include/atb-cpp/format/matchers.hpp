@@ -9,37 +9,38 @@ namespace std {
 
 // COMMON MATCHERS FORMATTERS //////////////////////////////////////////////////
 template <bool Value, class CharT>
-class formatter<atb::Always<Value>, CharT>
-    : public std::formatter<bool, CharT> {
+struct formatter<atb::Always<Value>, CharT> : std::formatter<bool, CharT> {
   using base_formatter = std::formatter<bool, CharT>;
 
- public:
   template <class FormatContext>
-  auto format(const atb::Always<Value>&, FormatContext& ctx) const {
+  constexpr auto format(const atb::Always<Value>&, FormatContext& ctx) const {
     ctx.advance_to(std::format_to(ctx.out(), "Always "));
     return base_formatter::format(Value, ctx);
   }
 };
 
 template <class T, class CharT>
-class formatter<atb::Eq<T>, CharT> : public std::formatter<T, CharT> {
-  using base_formatter = std::formatter<T, CharT>;
+struct formatter<atb::Eq<T>, CharT> : std::formatter<atb::FmtTry<T>, CharT> {
+  using base_formatter = std::formatter<atb::FmtTry<T>, CharT>;
 
- public:
   template <class FormatContext>
-  auto format(const atb::Eq<T>& eq, FormatContext& ctx) const {
+  constexpr auto format(const atb::Eq<T>& matcher, FormatContext& ctx) const {
     ctx.advance_to(std::format_to(ctx.out(), "== "));
-    return base_formatter::format(eq.expected, ctx);
+    return base_formatter::format(atb::FmtTry{matcher.expected}, ctx);
   }
 };
 
 // template <class T, class CharT>
-// struct formatter<atb::Ne<T>, CharT> : atb::details::MatcherFormatterBase {
+// struct formatter<atb::Ne<T>, CharT> : std::formatter<atb::FmtTry<T>, CharT> {
+//   using base_formatter = std::formatter<atb::FmtTry<T>, CharT>;
+
 //   template <class FormatContext>
-//   auto format(const atb::Ne<T>& m, FormatContext& ctx) const {
-//     return std::format_to(ctx.out(), "!= {}", atb::FmtTry{m.expected});
+//   constexpr auto format(const atb::Ne<T>& matcher, FormatContext& ctx) const {
+//     ctx.advance_to(std::format_to(ctx.out(), "== "));
+//     return base_formatter::format(atb::FmtTry{matcher.expected}, ctx);
 //   }
 // };
+
 
 // template <class T, class CharT>
 // struct formatter<atb::Ge<T>, CharT> : atb::details::MatcherFormatterBase {

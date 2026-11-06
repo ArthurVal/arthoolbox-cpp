@@ -20,9 +20,9 @@ TEST(AtbFormatMatchersTest, Eq) {
   EXPECT_EQ(std::format("{}", Eq(true)), "== true");
   EXPECT_EQ(std::format("{}", Eq(10)), "== 10");
   EXPECT_EQ(std::format("{:X}", Eq(0xFF)), "== FF");
+  EXPECT_EQ(std::format("{}", Eq(NotFormattable{})), "== <?>");
 }
 
-  
 }  // namespace
 
 }  // namespace atb
