@@ -6,6 +6,7 @@ add_executable(tests-${PROJECT_NAME}
   test_string.cpp
   test_scope_exit.cpp
   test_format.cpp
+  test_format_matchers.cpp
 )
 
 target_link_libraries(tests-${PROJECT_NAME}
