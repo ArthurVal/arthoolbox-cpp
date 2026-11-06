@@ -68,6 +68,15 @@ TEST(AtbFormatMatchersTest, Near) {
   static_assert(!atb::formattable<Near<int, NotFormattable>>);
 }
 
+TEST(AtbFormatMatchersTest, Not) {
+  EXPECT_EQ(std::format("{}", Not(Eq(true))), "NOT (== true)");
+
+  const auto m = Not(Eq(255));
+  EXPECT_EQ(std::format("{}", m), "NOT (== 255)");
+  EXPECT_EQ(std::format("{:X}", m), "NOT (== FF)");
+  static_assert(!atb::formattable<Not<Eq<NotFormattable>>>);
+}
+
 }  // namespace
 
 }  // namespace atb

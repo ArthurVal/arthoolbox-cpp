@@ -105,14 +105,19 @@ class formatter<atb::Near<T, Error>, CharT> : public std::formatter<T, CharT> {
 
 // COMPOSITE MATCHERS FORMATTERS ///////////////////////////////////////////////
 
-// template <class Matcher, class CharT>
-// struct formatter<atb::Not<Matcher>, CharT>
-//     : atb::details::MatcherFormatterBase {
-//   template <class FormatContext>
-//   auto format(const atb::Not<Matcher>& m, FormatContext& ctx) const {
-//     return std::format_to(ctx.out(), "Not({})", atb::FmtTry{m.matcher});
-//   }
-// };
+template <class Matcher, class CharT>
+struct formatter<atb::Not<Matcher>, CharT>
+    : public std::formatter<Matcher, CharT> {
+  using base_formatter = std::formatter<Matcher, CharT>;
+
+  template <class FormatContext>
+  constexpr auto format(const atb::Not<Matcher>& matcher,
+                        FormatContext& ctx) const {
+    ctx.advance_to(std::format_to(ctx.out(), "NOT ("));
+    ctx.advance_to(base_formatter::format(matcher.matcher, ctx));
+    return std::format_to(ctx.out(), ")");
+  }
+};
 
 // template <class... Matchers, class CharT>
 // struct formatter<atb::AllOf<Matchers...>, CharT>
