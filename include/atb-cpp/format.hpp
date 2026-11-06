@@ -130,7 +130,7 @@ struct FmtJoin {
       : glue{std::move(g)}, values{ATB_FWD(args)...} {}
 };
 
-// CTAD - Deduce when giving any iterable
+// CTAD - Deduce when giving a single iterable
 template <class G, std::ranges::range R>
 FmtJoin(G, R&&) -> FmtJoin<G, std::views::all_t<R>>;
 

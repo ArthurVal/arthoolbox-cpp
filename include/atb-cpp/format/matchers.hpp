@@ -1,6 +1,7 @@
 #pragma once
 
 #include <format>
+#include <string_view>
 
 #include "atb-cpp/format.hpp"
 #include "atb-cpp/matchers.hpp"
@@ -111,30 +112,51 @@ struct formatter<atb::Not<Matcher>, CharT>
   using base_formatter = std::formatter<Matcher, CharT>;
 
   template <class FormatContext>
-  constexpr auto format(const atb::Not<Matcher>& matcher,
+  constexpr auto format(const atb::Not<Matcher>& not_m,
                         FormatContext& ctx) const {
     ctx.advance_to(std::format_to(ctx.out(), "NOT ("));
-    ctx.advance_to(base_formatter::format(matcher.matcher, ctx));
+    ctx.advance_to(base_formatter::format(not_m.matcher, ctx));
     return std::format_to(ctx.out(), ")");
   }
 };
+}  // namespace std
 
-// template <class... Matchers, class CharT>
-// struct formatter<atb::AllOf<Matchers...>, CharT>
-//     : atb::details::MatcherFormatterBase {
-//   template <class FormatContext>
-//   auto format(const atb::AllOf<Matchers...>& all_of, FormatContext& ctx)
-//   const {
-//     return std::format_to(
-//         ctx.out(), "[{}]",
-//         atb::FmtJoin{
-//             .glue = " AND ",
-//             .values = std::apply(
-//                 [](const auto&... m) { return std::tie(atb::FmtTry(m)...); },
-//                 all_of.matchers),
-//         });
-//   }
-// };
+namespace atb::details {
+
+/// TODO
+template <class G, class... Ts>
+using FmtJoinType_from =
+    decltype(FmtJoin(std::declval<G>(), std::declval<Ts>()...));
+
+}  // namespace atb::details
+
+namespace std {
+
+template <class CharT, class... Matchers>
+struct formatter<atb::AllOf<Matchers...>, CharT>
+    : public std::formatter<
+          atb::details::FmtJoinType_from<std::string_view, const Matchers&...>,
+          CharT> {
+  using base_formatter = std::formatter<
+      atb::details::FmtJoinType_from<std::string_view, const Matchers&...>,
+      CharT>;
+
+  template <class FormatContext>
+  constexpr auto format(const atb::AllOf<Matchers...>& all_of,
+                        FormatContext& ctx) const {
+    using namespace std::string_view_literals;
+
+    ctx.advance_to(std::format_to(ctx.out(), "["));
+    std::apply(
+        [&](const auto&... matchers) {
+          ctx.advance_to(base_formatter::format(
+              atb::FmtJoin(" AND "sv, matchers...), ctx));
+        },
+        all_of.matchers);
+    return std::format_to(ctx.out(), "]");
+  }
+};
+
 
 // template <class... Matchers, class CharT>
 // struct formatter<atb::AnyOf<Matchers...>, CharT>

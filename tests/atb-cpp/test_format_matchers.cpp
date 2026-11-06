@@ -77,6 +77,18 @@ TEST(AtbFormatMatchersTest, Not) {
   static_assert(!atb::formattable<Not<Eq<NotFormattable>>>);
 }
 
+TEST(AtbFormatMatchersTest, AllOf) {
+  EXPECT_EQ(std::format("{}", AllOf(Eq(10))), "[== 10]");
+  EXPECT_EQ(std::format("{}", AllOf(Eq(420), Ne(true))),
+            "[== 420 AND != true]");
+  static_assert(!atb::formattable<AllOf<Eq<NotFormattable>>>);
+  static_assert(!atb::formattable<AllOf<Eq<int>, Ne<NotFormattable>>>);
+
+  // Using the same matchers enables format specifiers
+  EXPECT_EQ(std::format("{:04X}", AllOf(Eq(0xFF), Eq(0xAA))),
+            "[== 00FF AND == 00AA]");
+}
+
 }  // namespace
 
 }  // namespace atb
