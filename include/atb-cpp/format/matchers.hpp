@@ -86,7 +86,10 @@ struct formatter<atb::Lt<T>, CharT> : std::formatter<T, CharT> {
 };
 
 template <class T, class Error, class CharT>
-struct formatter<atb::Near<T, Error>, CharT> : std::formatter<T, CharT> {
+class formatter<atb::Near<T, Error>, CharT> : public std::formatter<T, CharT> {
+  std::formatter<Error, CharT> m_fmt_error;
+
+ public:
   using base_formatter = std::formatter<T, CharT>;
 
   template <class FormatContext>
@@ -94,8 +97,9 @@ struct formatter<atb::Near<T, Error>, CharT> : std::formatter<T, CharT> {
                         FormatContext& ctx) const {
     ctx.advance_to(std::format_to(ctx.out(), "~= "));
     ctx.advance_to(base_formatter::format(matcher.expected, ctx));
-    return std::format_to(ctx.out(), " (+/- {})",
-                          atb::FmtTry{matcher.abs_error});
+    ctx.advance_to(std::format_to(ctx.out(), " (+/- "));
+    ctx.advance_to(m_fmt_error.format(matcher.abs_error, ctx));
+    return std::format_to(ctx.out(), ")");
   }
 };
 
