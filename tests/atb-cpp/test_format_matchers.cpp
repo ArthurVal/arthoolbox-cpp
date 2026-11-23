@@ -89,6 +89,19 @@ TEST(AtbFormatMatchersTest, AllOf) {
             "[== 00FF AND == 00AA]");
 }
 
+TEST(AtbFormatMatchersTest, AnyOf) {
+  EXPECT_EQ(std::format("{}", AnyOf(Eq(10))), "[== 10]");
+  EXPECT_EQ(std::format("{}", AnyOf(Eq(420), Ne(true))),
+            "[== 420 OR != true]");
+  static_assert(!atb::formattable<AnyOf<Eq<NotFormattable>>>);
+  static_assert(!atb::formattable<AnyOf<Eq<int>, Ne<NotFormattable>>>);
+
+  // Using the same matchers enables format specifiers
+  EXPECT_EQ(std::format("{:04X}", AnyOf(Eq(0xFF), Eq(0xAA))),
+            "[== 00FF OR == 00AA]");
+}
+
+
 }  // namespace
 
 }  // namespace atb

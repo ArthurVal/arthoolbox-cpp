@@ -158,22 +158,30 @@ struct formatter<atb::AllOf<Matchers...>, CharT>
 };
 
 
-// template <class... Matchers, class CharT>
-// struct formatter<atb::AnyOf<Matchers...>, CharT>
-//     : atb::details::MatcherFormatterBase {
-//   template <class FormatContext>
-//   auto format(const atb::AnyOf<Matchers...>& any_of, FormatContext& ctx)
-//   const {
-//     return std::format_to(
-//         ctx.out(), "[{}]",
-//         atb::FmtJoin{
-//             .glue = " OR ",
-//             .values = std::apply(
-//                 [](const auto&... m) { return std::tie(atb::FmtTry(m)...); },
-//                 any_of.matchers),
-//         });
-//   }
-// };
+template <class CharT, class... Matchers>
+struct formatter<atb::AnyOf<Matchers...>, CharT>
+    : public std::formatter<
+          atb::details::FmtJoinType_from<std::string_view, const Matchers&...>,
+          CharT> {
+  using base_formatter = std::formatter<
+      atb::details::FmtJoinType_from<std::string_view, const Matchers&...>,
+      CharT>;
+
+  template <class FormatContext>
+  constexpr auto format(const atb::AnyOf<Matchers...>& all_of,
+                        FormatContext& ctx) const {
+    using namespace std::string_view_literals;
+
+    ctx.advance_to(std::format_to(ctx.out(), "["));
+    std::apply(
+        [&](const auto&... matchers) {
+          ctx.advance_to(base_formatter::format(
+              atb::FmtJoin(" OR "sv, matchers...), ctx));
+        },
+        all_of.matchers);
+    return std::format_to(ctx.out(), "]");
+  }
+};
 
 // FILTER ARGS COMPOSITE MATCHERS FORMATTERS ///////////////////////////////////
 
