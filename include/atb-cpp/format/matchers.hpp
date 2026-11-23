@@ -114,7 +114,7 @@ struct formatter<atb::Not<Matcher>, CharT>
   template <class FormatContext>
   constexpr auto format(const atb::Not<Matcher>& not_m,
                         FormatContext& ctx) const {
-    ctx.advance_to(std::format_to(ctx.out(), "NOT ("));
+    ctx.advance_to(std::format_to(ctx.out(), "NOT("));
     ctx.advance_to(base_formatter::format(not_m.matcher, ctx));
     return std::format_to(ctx.out(), ")");
   }
