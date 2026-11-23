@@ -144,19 +144,18 @@ struct formatter<atb::AllOf<Matchers...>, CharT>
   template <class FormatContext>
   constexpr auto format(const atb::AllOf<Matchers...>& all_of,
                         FormatContext& ctx) const {
-    using namespace std::string_view_literals;
+    constexpr std::string_view sep = " AND ";
 
     ctx.advance_to(std::format_to(ctx.out(), "["));
     std::apply(
         [&](const auto&... matchers) {
-          ctx.advance_to(base_formatter::format(
-              atb::FmtJoin(" AND "sv, matchers...), ctx));
+          ctx.advance_to(
+              base_formatter::format(atb::FmtJoin(sep, matchers...), ctx));
         },
         all_of.matchers);
     return std::format_to(ctx.out(), "]");
   }
 };
-
 
 template <class CharT, class... Matchers>
 struct formatter<atb::AnyOf<Matchers...>, CharT>
@@ -170,13 +169,13 @@ struct formatter<atb::AnyOf<Matchers...>, CharT>
   template <class FormatContext>
   constexpr auto format(const atb::AnyOf<Matchers...>& all_of,
                         FormatContext& ctx) const {
-    using namespace std::string_view_literals;
+    constexpr std::string_view sep = " OR ";
 
     ctx.advance_to(std::format_to(ctx.out(), "["));
     std::apply(
         [&](const auto&... matchers) {
-          ctx.advance_to(base_formatter::format(
-              atb::FmtJoin(" OR "sv, matchers...), ctx));
+          ctx.advance_to(
+              base_formatter::format(atb::FmtJoin(sep, matchers...), ctx));
         },
         all_of.matchers);
     return std::format_to(ctx.out(), "]");
